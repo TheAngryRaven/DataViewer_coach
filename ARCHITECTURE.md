@@ -21,6 +21,21 @@ coaching** — "you're lifting too early into the hairpin, that's costing you
   in-session coaching is a later, harder mode and is explicitly out of scope for
   now, though the pipeline is designed not to preclude it.
 
+**Two stages.** The system splits into a deterministic analysis core and an
+optional AI layer on top:
+
+- **Stage 1 — the analysis core (deterministic, local, free).** All the
+  telemetry math: ingest, distance model, segmentation, metrics, deltas,
+  consistency, and the technique evaluators (§4–§7). This runs in the plugin with
+  no model calls and is useful on its own (the Labs panel already shows a Stage-1
+  read). The "so much math" lives here, *off* the model.
+- **Stage 2 — the AI coach (subscription, provider-funded backend).** A model
+  reasons on top of Stage-1 outputs. Its highest-value job is **setup-configuration
+  advice** — reasoning over `(setup, log)` pairs across runs, which is qualitative
+  and knowledge-heavy in a way deterministic code can't match. See
+  `ARCHITECTURE_addon2.md` for the two-stage rationale, the setup-advice subsystem,
+  and the commercial/execution model.
+
 ## 2. How it plugs into DataViewer
 
 The plugin entrypoint (`index.ts`) default-exports a `DataViewerPlugin` and
@@ -33,11 +48,13 @@ isolation against recorded sessions without a running host.
 
 ## 3. Design principles
 
-1. **Deterministic analysis, LLM as verbalizer.** Every number — time deltas,
-   braking points, minimum corner speed — is computed in plain code. The LLM
+1. **Deterministic analysis, model on top.** Every number — time deltas,
+   braking points, minimum corner speed — is computed in plain code. The model
    never sees raw telemetry arrays and never produces a figure it wasn't handed.
    A single fabricated "0.3s in turn 4" permanently destroys a coach's
-   credibility. The model's job is to cluster, prioritize, and explain. (See §8.)
+   credibility. The model's job is qualitative: cluster, prioritize, explain, and
+   — most distinctively — reason about *setup* (§8, addon B). It is a separate,
+   paid second stage, not woven into the math.
 2. **Distance domain, not time domain.** Laps are compared spatially along the
    track, so two laps line up point-for-point regardless of speed. This is the
    universal convention (MoTeC, FastF1, the commercial sim coaches).
@@ -45,9 +62,10 @@ isolation against recorded sessions without a running host.
    thresholds covers most actionable coaching with zero training data. ML
    (clustering, anomaly detection, style classification) is deferred until there
    is a labeled lap corpus and the heuristic core exists.
-4. **The reference is an interface, not the driver's best lap.** Because an
-   amateur's fastest lap can still be a poor lap, "what good looks like" is a
-   pluggable concept with several strategies (see §7).
+4. **The reference is an interface, not the driver's best lap** (the "folklore
+   trap"). Because an amateur's fastest lap can still be a poor lap, "what good
+   looks like" is a pluggable concept with several strategies (see §7), grounded
+   in the driver's own data — never in hardcoded folklore (ideal-apex tables, etc).
 5. **Keep it primitive.** Build in phases (§9); each phase is independently
    useful. Don't introduce a config system, plugin abstraction, or ML dependency
    before a phase actually needs it.
@@ -178,57 +196,142 @@ as they improve, and (4) once cloud references exist. The evaluator set is
 additive — adding the cloud reference later does not require reworking the
 pipeline.
 
-## 8. The coaching (LLM) layer
+## 8. The coaching (AI) layer — Stage 2
 
-Input: a ranked list of structured insights (each with a corner, a quantified
-time/skill cost, and a root cause). Output: the top 1–3 pieces of advice in
-plain language. Principles:
+The paid second stage. It consumes Stage-1's ranked structured insights (each
+with a corner, a quantified time/skill cost, and a root cause) plus — where the
+model earns its subscription — **kart setup metadata**. Two jobs:
 
-- **One theme at a time.** Cluster correlated faults ("you brake early in every
-  slow corner") into a single root cause rather than emitting twelve disjoint
-  notes. Rank by time lost; say the most impactful thing first.
+- **Setup-configuration advice (the flagship AI use).** Reason over `(setup, log)`
+  pairs across runs to explain what a setup change did to the telemetry and what
+  to try next. This is qualitative, combinatorial, domain-knowledge-heavy
+  cause-and-effect — exactly what deterministic code can't do and a model can.
+  This is the primary justification for the AI tier; see `ARCHITECTURE_addon2.md`.
+- **Telemetry-coaching prose (optional polish).** Verbalizing per-corner insights:
+  one theme at a time (cluster correlated faults; rank by time lost; say the most
+  impactful thing first). Because the insights are already structured, this prose
+  is *templatable in Stage 1 without a model* — the AI is an upgrade here, not a
+  requirement.
+
+Principles (both jobs):
+
 - **Grounded by construction.** The model may only reference metrics it was
-  given. Instruction: never invent numbers; if a metric isn't provided, don't
-  cite it.
+  given. Never invent numbers; if a metric isn't provided, don't cite it.
 - **Claude API shape:** tool-use so the model *queries* metrics rather than
-  ingesting raw telemetry; **structured JSON output** so every tip traces back to
-  a metric field (`{ corner, timeLost, rootCause, instruction }`); **prompt
-  caching** on the static track knowledge + coaching rules + tool schemas, with
-  the volatile per-lap data sent after the cached prefix.
+  ingesting raw telemetry; **structured output** so every claim traces to a metric
+  or setup field; **prompt caching** on the static track knowledge, setup schema,
+  and coaching rules, with the volatile per-run data sent after the cached prefix.
 
 The model is deliberately the *last and thinnest* stage. Everything it says is
-backed by a number computed upstream.
+backed by a number computed upstream or a setup value the user entered.
 
 ## 9. Build roadmap
 
 Each phase is independently useful and shippable.
 
+**Stage 1 — analysis core (deterministic, free).** Note phase 0 below: the data
+is only as good as its conditioning (see §10).
+
+0. **Data quality & conditioning.** GPS/IMU filtering, sensor fusion, a stable
+   distance axis, accelerometer gravity/orientation calibration, projection to a
+   metric frame, and lap-validity gating. Caps the accuracy of everything above.
 1. **Ingest + distance model + lap/corner detection.** DovesDataLogger adapter →
    `Session` → distance-resampled laps → auto-detected corners. Deliverable: a
-   clean, queryable per-lap data model. No AI.
+   clean, queryable per-lap data model.
 2. **Self-relative analysis.** Theoretical-best (micro-sector) and personal-best
    deltas; per-corner time loss; consistency metrics. Deliverable: "where you're
-   losing time and where you're inconsistent." No AI.
+   losing time and where you're inconsistent."
 3. **Absolute technique metrics.** g-g/friction-circle usage, smoothness,
-   inferred throttle/brake application, momentum/min-corner-speed evaluators.
-   Deliverable: technique feedback that doesn't depend on a good reference.
-4. **Coaching layer.** Claude verbalization of the ranked insights from phases
-   2–3. Deliverable: plain-language debrief.
-5. **Later:** external/crowd reference (cloud), real-time mode, ML evaluators
-   (lap clustering, anomaly detection, style classification) once a labeled
-   corpus exists.
+   inferred throttle/brake application, momentum/min-corner-speed evaluators
+   (apex/V-Min: see `ARCHITECTURE_addon1.md`). Deliverable: technique feedback
+   that doesn't depend on a good reference. Optional: templated prose (no model).
 
-## 10. Open questions
+**Stage 2 — AI coach (subscription, provider-funded; addon B).**
 
-- DovesDataLogger's exact export format and channel set (pins the phase-1
-  adapter).
+4. **Setup capture + setup-vs-log advice.** A way to record kart setup per run,
+   then a model that reasons over `(setup, log)` pairs to advise setup direction.
+   The flagship paid feature. Requires the Stage-2 backend (keys server-side,
+   entitlement gating, result caching).
+5. **AI telemetry debrief.** Model-authored synthesis/prioritization of the
+   Stage-1 insights, as an upgrade over the templated prose.
+
+**Later:** external/crowd reference (cloud), real-time mode, ML evaluators (lap
+clustering, anomaly detection, style classification) once a labeled corpus exists.
+
+## 10. Foundations, risks & open questions
+
+Discoveries from review. The design is sophisticated about *what* to compute; the
+load-bearing risks are in the foundations beneath it and the system around it.
+Grouped by how much else depends on them.
+
+### Tier 1 — foundational (cap everything above them)
+
+- **Data quality & signal conditioning (the missing Stage 0).** §4–§7 assume a
+  clean distance `grid` and a usable curvature channel just appear. On a consumer
+  karting logger they won't:
+  - GPS at ~10–25 Hz over 30–60 s laps gives a fast corner only a handful of
+    samples; curvature (κ = 1/R) from raw GPS is very noisy.
+  - The **distance axis** is unspecified — integrate GPS speed (drifts) vs path
+    length (jitters)? That choice silently sets delta-time and apex-offset accuracy.
+  - The IMU needs **gravity compensation + orientation calibration**, and on
+    undulating tracks **gradient contaminates longitudinal-g** (and thus inferred
+    braking and the friction circle).
+  - Curvature/distance must be computed in a **projected metric frame** (local
+    tangent plane / UTM), not raw lat-lon.
+  This deserves to be a first-class stage (phase 0), not an assumption.
+- **Lap-validity gating & track-state evolution.** References are only as good as
+  the laps feeding them. Filter out-/in-laps, offs, spins, tows/traffic, and
+  engine bogs (RPM/temp can flag these) *before* computing any best/theoretical
+  best. Note theoretical-best stitched from micro-sectors can be **physically
+  un-drivable** (incompatible lines → a demotivating Frankenstein target) and needs
+  a sanity bound. Grip also **evolves within a session** (cold→hot tyres, rubber-in,
+  fuel burn) — comparing an early lap to a late one is unfair; normalize for it.
+- **Track & corner identity across sessions.** Listed before as a mere open
+  question, but it's a prerequisite for consistency-across-sessions, trends, and
+  "you fixed T1, now T7 is the loss." Requires track registration (align GPS frames
+  across days/devices) and stable corner identity (a marginal kink must map the
+  same run to run).
+
+### Tier 2 — the system around the analysis
+
+- **Causal attribution method (addon A.5 assumes it).** Splitting a corner delta
+  into V-Min vs line vs braking is the *hardest* step and the one coaching
+  credibility rests on — and the causes are correlated (early brake → low entry →
+  low V-Min → bad exit). Mis-attributing confidently is worse than saying less.
+  No method is specified yet.
+- **Validation / ground truth + real-telemetry fixtures.** For a project that
+  "ships with tests," the analysis core has none beyond formatting helpers. We need
+  a corpus of real DovesDataLogger sessions with known characteristics and golden
+  outputs, and ideally back-testing (does following advice correlate with
+  improvement?).
+- **Execution & commercial model — now decided (see addon B).** Provider-funded
+  inference behind a backend (keys server-side, never client), AI features
+  subscription-gated, Stage-1 analysis free and local, results cached to control
+  per-run cost. Recorded here so it stops being an open risk.
+
+### Tier 3 — note now, build later
+
+- **Driver model / coaching memory & pedagogy.** Persist skill level, what the
+  driver was already told and whether they acted on it, and progression.
+  Time-lost ranking alone isn't pedagogy — a beginner's biggest loss is often
+  un-actionable; fundamentals should gate fine-tuning.
+- **Streamable vs batch.** "Doesn't preclude real-time" is asserted, not designed:
+  parabolic V-Min fits, micro-sector stitching, and cross-lap variance are all
+  post-hoc. Mark which computations could be incremental if real-time matters.
+- **Privacy & data ownership.** Crowd/cloud references mean uploading driver
+  telemetry (and setup) — consent, anonymization, ownership.
+
+### Still genuinely open
+
+- DovesDataLogger's exact export format and channel set (pins the phase-1 adapter).
 - Track identification: learn start-finish + layout from data, or require a track
   definition? Karting venues are numerous and often unmapped.
-- How corner detection thresholds transfer across kart classes and track scales.
+- How corner-detection thresholds transfer across kart classes and track scales.
 - Where the line sits between "engine-health anomaly" and "driver coaching" for
   RPM/temp channels.
-- Confidence presentation: how to surface that inferred (throttle) metrics are
-  softer than measured ones.
+- Confidence presentation (partly addressed by addon A.6): surfacing that inferred
+  (throttle) and curvature-derived metrics are softer than measured ones.
+- Where setup data comes from and its per-class schema (see addon B).
 
 ## References
 
