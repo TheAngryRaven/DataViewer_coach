@@ -11,5 +11,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["index.ts", "plugins/**/*.ts"]
+  "include": ["index.ts", "plugins/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
 }
