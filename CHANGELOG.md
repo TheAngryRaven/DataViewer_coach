@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ARCHITECTURE.md` documenting the coaching-system design: the deterministic
+  analysis / LLM-verbalizer pipeline, distance-domain lap model, karting
+  tailoring, and the layered reference-lap strategy (absolute, consistency,
+  self-best, and stubbed external/crowd references).
+
 ## [0.0.2] - 2026-05-24
 
 ### Changed
