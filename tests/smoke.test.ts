@@ -19,7 +19,7 @@ describe("eye-in-the-sky plugin", () => {
     expect(plugin.priority).toBe(100);
   });
 
-  it("contributes a Coach-tab panel on setup", () => {
+  it("contributes a chromeless, lazily-loaded Coach-tab panel on setup", () => {
     const contribute = vi.fn();
     const ctx = { registry: { contribute }, storage } satisfies PluginContext;
 
@@ -30,6 +30,9 @@ describe("eye-in-the-sky plugin", () => {
     expect(point).toBe(PANELS_POINT);
     expect(panel.id).toBe("ai-coaching");
     expect(panel.slot).toBe(PanelSlot.Coach);
-    expect(typeof panel.component).toBe("function");
+    expect(panel.chromeless).toBe(true);
+    // React.lazy(...) yields an exotic component object, not a plain function.
+    expect(typeof panel.component).toBe("object");
+    expect(panel.component).not.toBeNull();
   });
 });

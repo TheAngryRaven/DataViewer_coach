@@ -124,6 +124,20 @@ describe("buildLapProfile", () => {
     expect(profile.elapsedMs[0]).toBe(0);
     expect(profile.elapsedMs[profile.elapsedMs.length - 1]).toBeCloseTo(3000, 0);
     expect(profile.speedMps[0]).toBeCloseTo(11, 5); // slice starts at sample index 1
+    expect(profile.channels).toEqual({});
+  });
+
+  it("resamples requested extra channels, NaN where missing", () => {
+    const samples = eastwardRun(6).map((s, i) => {
+      const extraFields: Record<string, number> = i === 3 ? { throttle: 80 } : {};
+      return { ...s, extraFields };
+    });
+    const grid = distanceGrid(3 * STEP_M, 4);
+    const profile = buildLapProfile(samples, lap(1, 1, 4), grid, ["throttle"]);
+    expect(profile.channels.throttle).toHaveLength(4);
+    // sample index 3 (the 3rd of the lap slice, ~2/3 along) carries throttle 80;
+    // its neighbours are NaN, so interpolation around it yields NaN.
+    expect(profile.channels.throttle.some((v) => Number.isNaN(v))).toBe(true);
   });
 });
 
@@ -166,6 +180,7 @@ describe("deltaTimeMs", () => {
       grid: [0, 50, 100],
       speedMps: [10, 10, 10],
       elapsedMs: [0, 1000, 2000],
+      channels: {},
     };
     const slower: LapProfile = { ...ref, lapNumber: 2, elapsedMs: [0, 1100, 2300] };
     expect(deltaTimeMs(ref, slower)).toEqual([0, 100, 300]);

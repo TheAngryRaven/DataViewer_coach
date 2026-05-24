@@ -35,5 +35,11 @@ export interface PluginPanel {
   slot: string;
   order?: number;
   icon?: ComponentType<{ className?: string }>;
+  /**
+   * When true, the host renders the panel body with no card/header/padding (and
+   * drops the slot's outer padding if every panel in it is chromeless), so the
+   * panel can own its full-bleed layout. Error boundary + Suspense still apply.
+   */
+  chromeless?: boolean;
   component: ComponentType<PluginPanelProps>;
 }

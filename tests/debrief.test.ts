@@ -14,7 +14,12 @@ function sLap(lapNumber: number, lapTimeMs: number, sectors?: SessionLap["sector
 }
 
 function session(laps: SessionLap[], topMph = 0, topKph = 0): Session {
-  return { laps, topSpeedMph: topMph, topSpeedKph: topKph, channels: [] };
+  return {
+    laps,
+    topSpeedMph: topMph,
+    topSpeedKph: topKph,
+    capabilities: { hasG: false, measuredG: false, throttle: false, brake: false, rpm: false },
+  };
 }
 
 describe("median", () => {

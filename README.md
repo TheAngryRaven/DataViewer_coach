@@ -8,13 +8,18 @@
 `@theangryraven/eye-in-the-sky` — an AI driver coach framework, packaged as a
 plugin for [DataViewer](https://github.com/TheAngryRaven/DataViewer_coach).
 
-> Status: early. The plugin contributes an "AI Coaching" panel to the host's
-> dedicated **Coach** tab showing a deterministic, local, free session debrief —
-> laps analysed (valid vs total), session-best lap, lap-time consistency, a
-> stitched theoretical best when sectors are present, session top speed, and a
-> plain-language takeaway. This is the Stage-1 (no-model) analysis core; the
-> AI-powered Stage 2 — see [ARCHITECTURE.md](./ARCHITECTURE.md) and
+> Status: early. The plugin contributes a deterministic, local, free **coaching
+> dashboard** to the host's dedicated **Coach** tab: a session summary
+> (laps/best/consistency/theoretical best/top speed + a plain-language takeaway),
+> speed-trace and delta-time-vs-best charts, a "where you're losing time"
+> per-corner breakdown, per-sector deltas, and braking/throttle notes. Richer
+> reads degrade gracefully by detected channels (e.g. measured vs GPS-derived g).
+> This is the Stage-1 (no-model) analysis core; the AI-powered Stage 2 — see
+> [ARCHITECTURE.md](./ARCHITECTURE.md) and
 > [ARCHITECTURE_addon2.md](./ARCHITECTURE_addon2.md) — is not yet implemented.
+>
+> Charts use [uPlot](https://github.com/leeoniya/uPlot); the panel is lazy-loaded
+> so uPlot stays out of the host's initial bundle.
 
 ## Install
 

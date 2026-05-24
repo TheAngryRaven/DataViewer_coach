@@ -85,6 +85,8 @@ export interface LapProfile {
   speedMps: number[];
   /** Elapsed time (ms from lap start) at each grid position. */
   elapsedMs: number[];
+  /** Optional extra channels (by canonical id) resampled onto the same grid. */
+  channels: Record<string, number[]>;
 }
 
 /** Samples covered by a lap (endIndex inclusive). */
@@ -98,23 +100,34 @@ export function lapLengthMeters(samples: GpsSample[], lap: Lap): number {
   return dist.length > 0 ? dist[dist.length - 1] : 0;
 }
 
-/** Build a lap's distance-domain profile by resampling speed and time onto `grid`. */
+/**
+ * Build a lap's distance-domain profile by resampling speed and time onto `grid`.
+ * Any `channelIds` (canonical `extraFields` keys) are resampled onto it too;
+ * missing values resample as NaN so callers can detect gaps.
+ */
 export function buildLapProfile(
   samples: GpsSample[],
   lap: Lap,
   grid: number[],
+  channelIds: string[] = [],
 ): LapProfile {
   const slice = lapSamples(samples, lap);
   const dist = cumulativeDistanceMeters(slice);
   const startMs = slice.length > 0 ? slice[0].t : lap.startTime;
   const speedYs = slice.map((s) => s.speedMps);
   const elapsedYs = slice.map((s) => s.t - startMs);
+  const channels: Record<string, number[]> = {};
+  for (const id of channelIds) {
+    const ys = slice.map((s) => s.extraFields[id] ?? Number.NaN);
+    channels[id] = resample(dist, ys, grid);
+  }
   return {
     lapNumber: lap.lapNumber,
     lengthMeters: dist.length > 0 ? dist[dist.length - 1] : 0,
     grid,
     speedMps: resample(dist, speedYs, grid),
     elapsedMs: resample(dist, elapsedYs, grid),
+    channels,
   };
 }
 
@@ -135,11 +148,15 @@ export function buildComparableProfiles(
   samples: GpsSample[],
   laps: Lap[],
   points: number,
+  channelIds: string[] = [],
 ): { grid: number[]; profiles: LapProfile[] } {
   if (laps.length === 0) return { grid: [], profiles: [] };
   const referenceLength = medianOf(laps.map((lap) => lapLengthMeters(samples, lap)));
   const grid = distanceGrid(referenceLength, points);
-  return { grid, profiles: laps.map((lap) => buildLapProfile(samples, lap, grid)) };
+  return {
+    grid,
+    profiles: laps.map((lap) => buildLapProfile(samples, lap, grid, channelIds)),
+  };
 }
 
 /**

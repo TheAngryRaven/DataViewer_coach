@@ -57,10 +57,20 @@ export interface Bounds {
   maxLon: number;
 }
 
+/**
+ * Describes one parsed channel. `name` is the canonical channel id (the key used
+ * in `GpsSample.extraFields`); `label`/`unit` are for display only.
+ */
+export interface FieldMapping {
+  name: string;
+  label: string;
+  unit: string;
+}
+
 export interface ParsedData {
   samples: GpsSample[];
-  /** Maps canonical channel names to the source column they were parsed from. */
-  fieldMappings: Record<string, string>;
+  /** Canonical channel id -> its display mapping. Keys match `extraFields` keys. */
+  fieldMappings: Record<string, FieldMapping>;
   bounds: Bounds;
   duration: number; // ms
   startDate?: string;

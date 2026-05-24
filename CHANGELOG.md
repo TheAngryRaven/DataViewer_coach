@@ -9,12 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Stage-1 coaching **dashboard** on the Coach tab (still deterministic, local,
+  free — no model, no network). Speed-trace and delta-time-vs-best charts
+  (uPlot), a "biggest time loss vs your best lap" breakdown, per-sector deltas,
+  and per-corner braking/throttle notes, over a session summary. Composed by the
+  pure `analysis/report.ts` builder; the panel is a thin view.
 - `analysis/distance.ts` — the distance-domain interpreter (ARCHITECTURE §4-5):
-  pure, deterministic geometry that turns the host's time-sampled GPS stream into
-  a distance-indexed view. Cumulative arc length (haversine), linear resampling
-  onto a shared distance grid, per-lap distance profiles (speed + elapsed time),
-  and per-distance lap-to-lap time delta. This is the foundation for cross-lap
-  overlays and the delta-time chart; not yet wired to any UI.
+  cumulative arc length (haversine), resampling onto a shared distance grid,
+  per-lap profiles (speed, elapsed time, and optional resampled channels), and
+  per-distance lap-to-lap time delta.
+- `analysis/corners.ts` — speed-valley corner segmentation in the distance domain
+  (V-Min apex + braking/exit window bounds), robust to GPS noise.
+- `analysis/segments.ts` — per-sector deltas, per-corner time loss vs the best
+  lap, a time-loss ranking, and braking-point (Tier-1, speed-derived) and
+  throttle-application (Tier-2, gated on a `throttle` channel) reads.
+- `analysis/channels.ts` — capability detection over the host's canonical channel
+  ids, distinguishing **measured** g (`accel_*` / `*_native`) from GPS-derived
+  `lat_g`/`lon_g`, plus throttle/brake/rpm presence — the gate for richer reads.
+- `analysis/signal.ts` — sample-rate-from-timestamps, moving average, and a
+  longitudinal-acceleration helper.
+- uPlot added as a runtime dependency, imported only inside the lazy panel module
+  so it never enters the host's initial bundle.
+
+### Changed
+
+- The Coach panel is now **lazy-loaded** (`React.lazy`) and **chromeless** (new
+  `PluginPanel.chromeless` flag), so it owns a full-bleed dashboard layout and
+  keeps uPlot off the host's first load.
+- Local stubs track the host contract: `FieldMapping` (`{ name, label, unit }`)
+  with `ParsedData.fieldMappings` keyed by canonical channel id, and the
+  `chromeless` panel flag.
 
 ## [0.1.0] - 2026-05-24
 
