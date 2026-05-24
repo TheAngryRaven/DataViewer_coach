@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Publish workflow now releases to the public npm registry (via `NPM_TOKEN`) in
   addition to GitHub Packages on `v*` tags. Removed `publishConfig.registry`
-  so each publish job targets its own registry.
+  so each publish job targets its own registry. The npm release is published
+  as `@perchwerks/eye-in-the-sky` (the job rewrites the scope at publish time);
+  GitHub Packages keeps `@theangryraven/eye-in-the-sky` to match the repo owner.
 
 ### Added
 

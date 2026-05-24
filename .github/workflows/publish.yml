@@ -38,8 +38,14 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          scope: '@perchwerks'
+      # GitHub Packages requires the package scope to match the repo owner, so
+      # package.json keeps the @theangryraven scope for that registry. Rewrite
+      # it to @perchwerks here for the public npm release (CI checkout is
+      # throwaway, so this never touches the committed package.json).
+      - run: npm pkg set name=@perchwerks/eye-in-the-sky
       # Scoped packages default to restricted; --access public is required to
-      # publish a public package under the @theangryraven scope.
+      # publish a public package under the @perchwerks scope.
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
