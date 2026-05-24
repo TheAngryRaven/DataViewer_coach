@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ARCHITECTURE_addon2.md` — the two-stage coaching model (free deterministic
+  analysis core vs a paid, provider-funded AI stage), the setup-configuration
+  advice subsystem (reasoning over `(setup, log)` A/B comparisons), and the
+  execution/commercial model.
+
+### Changed
+
+- `ARCHITECTURE.md`: introduced the Stage 1 / Stage 2 split (§1, §3, §8, §9) and
+  expanded §10 into "Foundations, risks & open questions" recording the reviewed
+  gaps — data-quality/conditioning (Stage 0), lap-validity gating and track-state
+  evolution, cross-session track/corner identity, causal attribution, validation
+  fixtures, driver-model/pedagogy, streamable-vs-batch, and privacy.
+
 ## [0.0.3] - 2026-05-24
 
 ### Added
