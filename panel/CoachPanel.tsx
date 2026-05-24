@@ -5,7 +5,7 @@ import {
   findLap,
   formatDelta,
   formatLapTime,
-} from "@/analysis/insights";
+} from "../analysis/insights";
 
 /**
  * First coaching read for the Labs tab. The host renders this inside a titled

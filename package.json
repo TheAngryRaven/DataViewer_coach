@@ -5,6 +5,12 @@
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "index.ts",
+  "files": [
+    "index.ts",
+    "analysis/",
+    "panel/",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

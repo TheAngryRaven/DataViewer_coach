@@ -6,7 +6,7 @@ import {
   findLap,
   formatDelta,
   formatLapTime,
-} from "@/analysis/insights";
+} from "../analysis/insights";
 
 const laps: Lap[] = [
   { lapNumber: 1, lapTime: 84.123 },
