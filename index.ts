@@ -1,5 +1,5 @@
 import { Gauge } from "lucide-react";
-import { CoachPanel } from "@/panel/CoachPanel";
+import { CoachPanel } from "./panel/CoachPanel";
 import { PANELS_POINT, PanelSlot, type PluginPanel } from "@/plugins/panels";
 import type { DataViewerPlugin } from "@/plugins/types";
 
