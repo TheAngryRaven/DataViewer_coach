@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-24
+
 ### Added
 
+- First real session-level debrief (Stage 1: deterministic, local, free — no
+  model). The Coach panel now shows laps analysed (valid vs total), session-best
+  lap, lap-time consistency (±1σ and spread), a stitched theoretical best when
+  sector splits are present, session top speed (honouring the kph/mph
+  preference), and one plain-language takeaway prioritising the single biggest
+  gain. Computed in pure, unit-tested functions in `analysis/debrief.ts`.
+- `analysis/session.ts` — a thin internal adapter (the Stage-0/1 "interpreter")
+  mapping the host `ParsedData`/`Lap` snapshot to an internal `Session` model,
+  with capability-detection of optional logger channels (`detectChannels`) so the
+  read degrades gracefully to pure GPS.
+- `formatLapTimeMs` and `formatSpeed` display helpers in `analysis/insights.ts`.
 - `ARCHITECTURE_addon2.md` — the two-stage coaching model (free deterministic
   analysis core vs a paid, provider-funded AI stage), the setup-configuration
   advice subsystem (reasoning over `(setup, log)` A/B comparisons), and the
@@ -16,11 +29,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The coaching panel moved from the Labs tab to the host's new dedicated **Coach**
+  tab (`PanelSlot.Coach`). The panel is now a thin view over the pure debrief
+  functions and handles the no-session and no-laps states gracefully.
+- Local compile-time stubs now mirror the real host contract exactly:
+  `types/racing.ts` (`GpsSample`/`Lap`/`Course`/`ParsedData` with the host's
+  millisecond and dual-unit speed fields), `plugins/panels.ts` (added
+  `PanelSlot.Coach`), and `plugins/types.ts` (added the per-plugin async
+  `PluginStore` on the setup context, reserved for later coaching memory).
 - `ARCHITECTURE.md`: introduced the Stage 1 / Stage 2 split (§1, §3, §8, §9) and
   expanded §10 into "Foundations, risks & open questions" recording the reviewed
   gaps — data-quality/conditioning (Stage 0), lap-validity gating and track-state
   evolution, cross-session track/corner identity, causal attribution, validation
   fixtures, driver-model/pedagogy, streamable-vs-batch, and privacy.
+
+### Fixed
+
+- Insight helpers read the non-existent `lap.lapTime` (seconds) field on the host
+  `Lap`, which rendered the panel's lap times blank/NaN at runtime. They now use
+  `lap.lapTimeMs` and convert ms→s only for display, with a regression test.
 
 ## [0.0.3] - 2026-05-24
 

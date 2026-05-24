@@ -1,18 +1,27 @@
 import { describe, expect, it } from "vitest";
 import type { Lap } from "@/types/racing";
 import {
-  deltaToFastest,
   fastestLap,
-  findLap,
-  formatDelta,
   formatLapTime,
+  formatLapTimeMs,
+  formatSpeed,
 } from "../analysis/insights";
 
-const laps: Lap[] = [
-  { lapNumber: 1, lapTime: 84.123 },
-  { lapNumber: 2, lapTime: 82.5 },
-  { lapNumber: 3, lapTime: 83.001 },
-];
+/** A host Lap fixture; only the fields under test are filled meaningfully. */
+function lap(lapNumber: number, lapTimeMs: number): Lap {
+  return {
+    lapNumber,
+    lapTimeMs,
+    startTime: 0,
+    endTime: lapTimeMs,
+    maxSpeedMph: 0,
+    maxSpeedKph: 0,
+    minSpeedMph: 0,
+    minSpeedKph: 0,
+    startIndex: 0,
+    endIndex: 0,
+  };
+}
 
 describe("formatLapTime", () => {
   it("formats sub-minute and over-minute times as m:ss.mmm", () => {
@@ -27,7 +36,16 @@ describe("formatLapTime", () => {
   });
 });
 
+describe("formatLapTimeMs", () => {
+  it("converts milliseconds to m:ss.mmm", () => {
+    expect(formatLapTimeMs(83456)).toBe("1:23.456");
+    expect(formatLapTimeMs(62300)).toBe("1:02.300");
+  });
+});
+
 describe("fastestLap", () => {
+  const laps = [lap(1, 84123), lap(2, 82500), lap(3, 83001)];
+
   it("returns the lap with the lowest time", () => {
     expect(fastestLap(laps)?.lapNumber).toBe(2);
   });
@@ -35,35 +53,21 @@ describe("fastestLap", () => {
   it("returns null for an empty session", () => {
     expect(fastestLap([])).toBeNull();
   });
-});
 
-describe("findLap", () => {
-  it("finds a lap by number", () => {
-    expect(findLap(laps, 3)?.lapTime).toBe(83.001);
-  });
-
-  it("returns null when not selected or not found", () => {
-    expect(findLap(laps, null)).toBeNull();
-    expect(findLap(laps, 99)).toBeNull();
-  });
-});
-
-describe("deltaToFastest", () => {
-  it("computes the gap to the session best", () => {
-    expect(deltaToFastest(laps, 1)).toBeCloseTo(1.623, 3);
-    expect(deltaToFastest(laps, 2)).toBe(0);
-  });
-
-  it("returns null when there is nothing to compare", () => {
-    expect(deltaToFastest(laps, null)).toBeNull();
-    expect(deltaToFastest([], 1)).toBeNull();
+  // Regression: the host Lap carries `lapTimeMs`, not `lapTime`. Reading the
+  // missing field made every comparison `undefined < undefined` (false), so
+  // fastestLap silently returned the first lap and formatting rendered NaN.
+  it("ranks by lapTimeMs, not a non-existent lapTime field", () => {
+    const best = fastestLap(laps);
+    expect(best?.lapNumber).toBe(2);
+    expect(formatLapTimeMs(best!.lapTimeMs)).toBe("1:22.500");
+    expect(Number.isNaN(best!.lapTimeMs)).toBe(false);
   });
 });
 
-describe("formatDelta", () => {
-  it("signs the delta", () => {
-    expect(formatDelta(0.42)).toBe("+0.420s");
-    expect(formatDelta(-0.42)).toBe("-0.420s");
-    expect(formatDelta(0)).toBe("0.000s");
+describe("formatSpeed", () => {
+  it("respects the unit preference", () => {
+    expect(formatSpeed(62.137, 100, false)).toBe("62.1 mph");
+    expect(formatSpeed(62.137, 100, true)).toBe("100.0 km/h");
   });
 });
