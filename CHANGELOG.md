@@ -1,0 +1,20 @@
+# Changelog
+
+All notable changes to this project are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Plugin scaffold: `index.ts` entrypoint default-exporting a `DataViewerPlugin`
+  that contributes a placeholder `diagnostics` message, with a local
+  `plugins/types.ts` stub of the host interfaces.
+- Tooling: Vitest with v8 coverage and a smoke test; strict TypeScript;
+  type-checked ESLint that bans `any`.
+- CI pipelines (`lint`, `typecheck`, `test`, `coverage`) and a tag-triggered
+  `publish` workflow for GitHub Packages.
+- Self-hosted coverage badge published to the `badges` branch.
+- GPL-3.0-or-later license, README, and project notes.

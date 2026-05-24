@@ -18,6 +18,7 @@ not introduce abstractions, config, or dependencies ahead of need.
   real DataViewer types once this builds against the host.
 - `tests/` — Vitest specs (`*.test.ts`).
 - `vitest.config.ts` — test + v8 coverage config; maps the `@/` alias to the repo root.
+- `CHANGELOG.md` — Keep a Changelog format; see below.
 
 ## Conventions
 
@@ -52,9 +53,17 @@ ratchet up as coverage grows), posts a per-PR summary comment, and on `master`
 publishes a shields.io endpoint JSON to the `badges` branch via
 `scripts/coverage-badge.mjs`. The README coverage badge reads that JSON.
 
+## Changelog
+
+A changelog is mandatory. Every user-facing change must add an entry under the
+`[Unreleased]` section of `CHANGELOG.md` (Keep a Changelog format:
+Added/Changed/Fixed/Removed). On release, rename `[Unreleased]` to the new
+version and start a fresh `[Unreleased]` section.
+
 ## Before pushing
 
-Run `npm run lint`, `npm run typecheck`, and `npm run test:run`.
+Run `npm run lint`, `npm run typecheck`, and `npm run test:run`, and update
+`CHANGELOG.md`.
 
 ## Out of scope for Claude
 
