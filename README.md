@@ -1,5 +1,9 @@
 # Eye in the Sky
 
+[![Typecheck](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/typecheck.yml/badge.svg)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/typecheck.yml)
+[![Test](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/test.yml/badge.svg)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TheAngryRaven/DataViewer_coach/badges/coverage-badge.json)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/coverage.yml)
+
 `@theangryraven/eye-in-the-sky` — an AI driver coach framework, packaged as a
 plugin for [DataViewer](https://github.com/TheAngryRaven/DataViewer_coach).
 
@@ -28,11 +32,16 @@ plugin.setup(ctx); // ctx provided by the DataViewer host
 ## Development
 
 ```
-npm install        # install dev dependencies
-npm run typecheck  # tsc --noEmit
-npm test           # run the test suite
-npm run coverage   # run tests with a coverage report
+npm install            # install dev dependencies
+npm run typecheck      # tsc --noEmit
+npm test               # vitest (watch mode)
+npm run test:run       # vitest run (single pass)
+npm run test:coverage  # run tests with a coverage report
 ```
+
+The coverage badge is self-hosted: the `Coverage` workflow generates a
+[shields.io endpoint](https://shields.io/endpoint) JSON and publishes it to the
+`badges` branch — no third-party coverage service is involved.
 
 ## License
 

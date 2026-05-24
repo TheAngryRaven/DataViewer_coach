@@ -28,16 +28,28 @@ not introduce abstractions, config, or dependencies ahead of need.
 ## Commands
 
 ```
-npm install        # dev dependencies
-npm run typecheck  # tsc --noEmit
-npm test           # vitest run
-npm run coverage   # vitest run --coverage
+npm install            # dev dependencies
+npm run typecheck      # tsc --noEmit
+npm test               # vitest (watch)
+npm run test:run       # vitest run (single pass)
+npm run test:coverage  # vitest run --coverage
 ```
+
+## CI
+
+Each pipeline is a separate workflow under `.github/workflows/`, mirroring
+DovesDataViewer: `typecheck.yml`, `test.yml`, `coverage.yml`. They run on every
+push to `master` and on pull requests.
+
+Coverage is self-hosted (no external service): `coverage.yml` runs the suite
+behind a line-coverage gate (`vitest.config.ts` thresholds, currently 1% —
+ratchet up as coverage grows), posts a per-PR summary comment, and on `master`
+publishes a shields.io endpoint JSON to the `badges` branch via
+`scripts/coverage-badge.mjs`. The README coverage badge reads that JSON.
 
 ## Before pushing
 
-Run `npm run typecheck` and `npm test`. CI (`.github/workflows/ci.yml`) runs both
-on every push to `master` and on pull requests.
+Run `npm run typecheck` and `npm run test:run`.
 
 ## Out of scope for Claude
 

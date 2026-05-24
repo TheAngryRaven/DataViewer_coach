@@ -8,9 +8,11 @@
   "publishConfig": { "registry": "https://npm.pkg.github.com" },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "coverage": "vitest run --coverage"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "coverage:badge": "node scripts/coverage-badge.mjs",
+    "coverage:summary": "node scripts/coverage-summary.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

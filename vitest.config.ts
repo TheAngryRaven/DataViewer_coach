@@ -12,9 +12,16 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov"],
+      reporter: ["text", "text-summary", "json-summary", "lcov"],
       include: ["index.ts", "plugins/**/*.ts"],
       exclude: ["plugins/types.ts"],
+      // Gate intentionally low so it can be ratcheted up later as coverage grows.
+      thresholds: {
+        lines: 1,
+        functions: 1,
+        branches: 1,
+        statements: 1,
+      },
     },
   },
 });
