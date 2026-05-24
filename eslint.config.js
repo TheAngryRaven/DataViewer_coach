@@ -8,7 +8,7 @@ export default tseslint.config(
   // Type-aware linting for the TypeScript sources. This is what keeps `any`
   // out — both explicit annotations and values that decay to `any`.
   {
-    files: ["**/*.ts"],
+    files: ["**/*.ts", "**/*.tsx"],
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       globals: globals.node,

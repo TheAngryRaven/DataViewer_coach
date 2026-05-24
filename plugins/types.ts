@@ -1,5 +1,7 @@
 export interface PluginRegistry {
-  contribute(channel: string, value: string): void;
+  // The host registry is generic over extension points; contributions are typed
+  // at the call site (e.g. `satisfies PluginPanel`).
+  contribute(point: string, value: unknown): void;
 }
 
 export interface PluginContext {
