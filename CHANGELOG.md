@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `analysis/distance.ts` — the distance-domain interpreter (ARCHITECTURE §4-5):
+  pure, deterministic geometry that turns the host's time-sampled GPS stream into
+  a distance-indexed view. Cumulative arc length (haversine), linear resampling
+  onto a shared distance grid, per-lap distance profiles (speed + elapsed time),
+  and per-distance lap-to-lap time delta. This is the foundation for cross-lap
+  overlays and the delta-time chart; not yet wired to any UI.
+
 ## [0.1.0] - 2026-05-24
 
 ### Added
