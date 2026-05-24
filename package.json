@@ -5,7 +5,6 @@
   "license": "GPL-3.0-or-later",
   "type": "module",
   "main": "index.ts",
-  "publishConfig": { "registry": "https://npm.pkg.github.com" },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

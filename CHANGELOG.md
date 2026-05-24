@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Publish workflow now releases to the public npm registry (via `NPM_TOKEN`) in
+  addition to GitHub Packages on `v*` tags. Removed `publishConfig.registry`
+  so each publish job targets its own registry.
+
 ### Added
 
 - Plugin scaffold: `index.ts` entrypoint default-exporting a `DataViewerPlugin`

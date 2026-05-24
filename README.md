@@ -13,11 +13,14 @@ plugin for [DataViewer](https://github.com/TheAngryRaven/DataViewer_coach).
 
 ## Install
 
-This package is published to the GitHub Packages npm registry:
+Published to the public npm registry, so no registry config is needed:
 
 ```
 npm install @theangryraven/eye-in-the-sky
 ```
+
+Releases are also mirrored to GitHub Packages (`npm.pkg.github.com`) for the
+same owner.
 
 ## Usage
 

@@ -5,15 +5,17 @@ on:
     tags:
       - 'v*'
 
-# contents: read     -> checkout the tagged commit
-# packages: write    -> publish to GitHub Packages as the same owner
+# contents: read   -> checkout the tagged commit
+# packages: write  -> publish to GitHub Packages as the same owner
 permissions:
   contents: read
   packages: write
 
 jobs:
-  publish:
-    name: npm publish (GitHub Packages)
+  # Tag pushes don't trigger the branch/PR pipelines, so re-run the checks
+  # here once before publishing to either registry.
+  guard:
+    name: Lint, typecheck, test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +23,38 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@theangryraven'
       - run: npm ci
-
-      # Guard the release: tag pushes don't trigger the branch/PR pipelines.
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:run
 
+  publish-npm:
+    name: npm publish (public registry)
+    needs: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      # Scoped packages default to restricted; --access public is required to
+      # publish a public package under the @theangryraven scope.
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-github-packages:
+    name: npm publish (GitHub Packages)
+    needs: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@theangryraven'
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
