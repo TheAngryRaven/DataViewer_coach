@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `react`, `@types/react`, and `lucide-react` added as dev-only dependencies
   (compile-time; the host bundle provides them at runtime). TypeScript now emits
   the automatic JSX runtime and ESLint lints `.tsx`.
+- Added a `files` allowlist to `package.json` so the npm tarball ships only the
+  host-consumed source (`index.ts`, `panel/`, `analysis/`) plus docs — no tests,
+  CI configs, tooling, or the compile-time host-contract stubs.
 
 ## [0.0.2] - 2026-05-24
 
