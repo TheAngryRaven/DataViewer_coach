@@ -7,12 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-05-24
+
 ### Added
 
+- Labs UI panel: the plugin now contributes an "AI Coaching" panel to the host's
+  Labs tab (`PANELS_POINT`, slot `labs`) instead of a placeholder diagnostics
+  string. The panel shows a first coaching read from the session snapshot — lap
+  count, session-best lap, and the selected lap's delta to the best — with an
+  empty state when no session is loaded. Targets the DovesDataViewer host's
+  panel framework (currently on its beta branch).
+- Local compile-time stubs `plugins/panels.ts` and `types/racing.ts` mirroring
+  the host panel contract (`PANELS_POINT`, `PanelSlot`, `PluginPanel`,
+  `PluginPanelProps`) and racing types (`ParsedData`/`Lap`/`Course`/`GpsSample`).
+- Pure, tested insight helpers in `analysis/insights.ts` (fastest lap, delta to
+  best, lap-time/delta formatting) extracted from the panel for DOM-free tests.
 - `ARCHITECTURE.md` documenting the coaching-system design: the deterministic
   analysis / LLM-verbalizer pipeline, distance-domain lap model, karting
   tailoring, and the layered reference-lap strategy (absolute, consistency,
   self-best, and stubbed external/crowd references).
+
+### Changed
+
+- `react`, `@types/react`, and `lucide-react` added as dev-only dependencies
+  (compile-time; the host bundle provides them at runtime). TypeScript now emits
+  the automatic JSX runtime and ESLint lints `.tsx`.
 
 ## [0.0.2] - 2026-05-24
 

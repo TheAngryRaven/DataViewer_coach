@@ -1,12 +1,21 @@
+import { Gauge } from "lucide-react";
+import { CoachPanel } from "@/panel/CoachPanel";
+import { PANELS_POINT, PanelSlot, type PluginPanel } from "@/plugins/panels";
 import type { DataViewerPlugin } from "@/plugins/types";
 
 const plugin: DataViewerPlugin = {
   id: "ai-coaching",
   name: "AI Coaching",
-  version: "0.0.1",
+  version: "0.0.3",
   priority: 100, // overrides a public coach with the same id
   setup(ctx) {
-    ctx.registry.contribute("diagnostics", "ai-coaching: hello world");
+    ctx.registry.contribute(PANELS_POINT, {
+      id: "ai-coaching",
+      title: "AI Coaching",
+      slot: PanelSlot.Labs,
+      icon: Gauge,
+      component: CoachPanel,
+    } satisfies PluginPanel);
   },
 };
 
