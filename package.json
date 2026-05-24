@@ -1,0 +1,6 @@
+{
+  "name": "@theangryraven/eye-in-the-sky",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "publishConfig": { "registry": "https://npm.pkg.github.com" }
+}
