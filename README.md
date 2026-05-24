@@ -8,10 +8,13 @@
 `@theangryraven/eye-in-the-sky` — an AI driver coach framework, packaged as a
 plugin for [DataViewer](https://github.com/TheAngryRaven/DataViewer_coach).
 
-> Status: early scaffold. The plugin contributes an "AI Coaching" panel to the
-> host's Labs tab showing a first coaching read (lap count, session-best lap, and
-> the selected lap's delta to the best). The deeper coaching framework — see
-> [ARCHITECTURE.md](./ARCHITECTURE.md) — is not yet implemented.
+> Status: early. The plugin contributes an "AI Coaching" panel to the host's
+> dedicated **Coach** tab showing a deterministic, local, free session debrief —
+> laps analysed (valid vs total), session-best lap, lap-time consistency, a
+> stitched theoretical best when sectors are present, session top speed, and a
+> plain-language takeaway. This is the Stage-1 (no-model) analysis core; the
+> AI-powered Stage 2 — see [ARCHITECTURE.md](./ARCHITECTURE.md) and
+> [ARCHITECTURE_addon2.md](./ARCHITECTURE_addon2.md) — is not yet implemented.
 
 ## Install
 
@@ -28,7 +31,7 @@ under the repo owner's scope, `@theangryraven/eye-in-the-sky`.
 
 The package default-exports a `DataViewerPlugin`. The host app loads it and calls
 `setup(ctx)` during initialization; the plugin contributes its UI panel to the
-host's `PANELS_POINT` registry point (Labs slot):
+host's `PANELS_POINT` registry point (Coach slot):
 
 ```ts
 import plugin from "@perchwerks/eye-in-the-sky";

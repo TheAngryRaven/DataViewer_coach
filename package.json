@@ -1,6 +1,6 @@
 {
   "name": "@theangryraven/eye-in-the-sky",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "AI driver coach framework plugin for DataViewer.",
   "license": "GPL-3.0-or-later",
   "type": "module",

@@ -8,9 +8,10 @@ import type { Course, Lap, ParsedData } from "@/types/racing";
 /** Registry extension point that collects UI panel contributions. */
 export const PANELS_POINT = "ui:panels";
 
-/** Slots a panel can target. Only the Labs tab exists today. */
+/** Slots a panel can target. The host added a dedicated Coach tab. */
 export const PanelSlot = {
   Labs: "labs",
+  Coach: "coach",
 } as const;
 
 export type PanelSlot = (typeof PanelSlot)[keyof typeof PanelSlot];
