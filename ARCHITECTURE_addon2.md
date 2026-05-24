@@ -38,11 +38,13 @@ The split is deliberate, not incidental:
 - **It reasons over** Stage-1's structured insights (`{ corner, timeLost, rootCause,
   … }`), the consistency/technique findings, and **setup metadata** — plus baked-in
   karting domain knowledge.
-- **Telemetry-coaching prose is optional.** Because Stage-1 insights are already
-  structured, the per-corner debrief can be rendered by templates with no model
-  (Stage 1). The AI is an *upgrade* there (better clustering, prioritization, tone),
-  not a requirement — which is the honest answer to "what can the model actually
-  manage?": keep it off the numbers, let it phrase and reason.
+- **The telemetry debrief ships in two tiers.** Because Stage-1 insights are
+  already structured, the per-corner debrief can be rendered by templates with no
+  model — that's the **free** tier (Stage 1). The **`+` AI debrief** (Stage 2) is a
+  paid upgrade that does richer clustering, prioritization, and tone over the same
+  structured insights. The free tier always stands alone; the AI tier never invents
+  numbers, it only phrases and prioritizes them. This is the honest answer to "what
+  can the model actually manage?": keep it off the math, let it phrase and reason.
 
 ## B.3 The flagship: setup-configuration advice
 

@@ -207,11 +207,12 @@ model earns its subscription — **kart setup metadata**. Two jobs:
   to try next. This is qualitative, combinatorial, domain-knowledge-heavy
   cause-and-effect — exactly what deterministic code can't do and a model can.
   This is the primary justification for the AI tier; see `ARCHITECTURE_addon2.md`.
-- **Telemetry-coaching prose (optional polish).** Verbalizing per-corner insights:
-  one theme at a time (cluster correlated faults; rank by time lost; say the most
-  impactful thing first). Because the insights are already structured, this prose
-  is *templatable in Stage 1 without a model* — the AI is an upgrade here, not a
-  requirement.
+- **Telemetry debrief — two tiers.** Verbalizing per-corner insights: one theme at
+  a time (cluster correlated faults; rank by time lost; say the most impactful
+  thing first). This ships in two flavours: a **free** debrief rendered by
+  templates in Stage 1 (no model), and a **`+` AI debrief** (Stage 2) that does
+  richer clustering, prioritization, and tone. Because the insights are already
+  structured, the free tier stands alone and the AI tier is a paid upgrade over it.
 
 Principles (both jobs):
 
@@ -252,8 +253,8 @@ is only as good as its conditioning (see §10).
    then a model that reasons over `(setup, log)` pairs to advise setup direction.
    The flagship paid feature. Requires the Stage-2 backend (keys server-side,
    entitlement gating, result caching).
-5. **AI telemetry debrief.** Model-authored synthesis/prioritization of the
-   Stage-1 insights, as an upgrade over the templated prose.
+5. **`+` AI telemetry debrief.** Model-authored synthesis/prioritization of the
+   Stage-1 insights — the paid upgrade over the free templated debrief (phase 3).
 
 **Later:** external/crowd reference (cloud), real-time mode, ML evaluators (lap
 clustering, anomaly detection, style classification) once a labeled corpus exists.
