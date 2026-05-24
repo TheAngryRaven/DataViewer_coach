@@ -21,6 +21,9 @@ not introduce abstractions, config, or dependencies ahead of need.
 
 ## Conventions
 
+- TypeScript-only project. `strict` is mandatory (`tsconfig.json`); `any` is
+  banned by lint (`@typescript-eslint/no-explicit-any` plus type-checked rules
+  in `eslint.config.js`). Avoid `any` — reach for proper types or `unknown`.
 - The `@/` import alias resolves to the repo root (see `tsconfig.json` and
   `vitest.config.ts`). Keep both in sync.
 - Type-only files (e.g. `plugins/types.ts`) are excluded from coverage.
@@ -29,6 +32,7 @@ not introduce abstractions, config, or dependencies ahead of need.
 
 ```
 npm install            # dev dependencies
+npm run lint           # eslint (type-checked; bans `any`)
 npm run typecheck      # tsc --noEmit
 npm test               # vitest (watch)
 npm run test:run       # vitest run (single pass)
@@ -38,8 +42,9 @@ npm run test:coverage  # vitest run --coverage
 ## CI
 
 Each pipeline is a separate workflow under `.github/workflows/`, mirroring
-DovesDataViewer: `typecheck.yml`, `test.yml`, `coverage.yml`. They run on every
-push to `master` and on pull requests.
+DovesDataViewer: `lint.yml`, `typecheck.yml`, `test.yml`, `coverage.yml`, plus
+`publish.yml` (on `v*` tags). They run on every push to `master` and on pull
+requests.
 
 Coverage is self-hosted (no external service): `coverage.yml` runs the suite
 behind a line-coverage gate (`vitest.config.ts` thresholds, currently 1% —
@@ -49,7 +54,7 @@ publishes a shields.io endpoint JSON to the `badges` branch via
 
 ## Before pushing
 
-Run `npm run typecheck` and `npm run test:run`.
+Run `npm run lint`, `npm run typecheck`, and `npm run test:run`.
 
 ## Out of scope for Claude
 

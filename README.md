@@ -1,5 +1,6 @@
 # Eye in the Sky
 
+[![Lint](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/lint.yml/badge.svg)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/lint.yml)
 [![Typecheck](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/typecheck.yml/badge.svg)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/typecheck.yml)
 [![Test](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/test.yml/badge.svg)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/test.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/TheAngryRaven/DataViewer_coach/badges/coverage-badge.json)](https://github.com/TheAngryRaven/DataViewer_coach/actions/workflows/coverage.yml)
@@ -33,6 +34,7 @@ plugin.setup(ctx); // ctx provided by the DataViewer host
 
 ```
 npm install            # install dev dependencies
+npm run lint           # eslint (type-checked; bans `any`)
 npm run typecheck      # tsc --noEmit
 npm test               # vitest (watch mode)
 npm run test:run       # vitest run (single pass)
