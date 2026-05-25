@@ -41,13 +41,19 @@ export interface LatLon {
   lon: number;
 }
 
+/** A sector boundary drawn across the track: a line segment between two points. */
+export interface SectorLine {
+  a: LatLon;
+  b: LatLon;
+}
+
 export interface Course {
   name: string;
   lengthFt?: number;
   startFinishA: LatLon;
   startFinishB: LatLon;
-  sector2?: LatLon;
-  sector3?: LatLon;
+  sector2?: SectorLine;
+  sector3?: SectorLine;
 }
 
 export interface Bounds {

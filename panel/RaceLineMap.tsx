@@ -164,21 +164,20 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
       )
         .bindPopup("Start / finish")
         .addTo(group);
-      for (const [label, point] of [
+      for (const [label, line] of [
         ["S2", course.sector2],
         ["S3", course.sector3],
       ] as const) {
-        if (point) {
-          L.circleMarker([point.lat, point.lon], {
-            radius: 4,
-            color: "#ffffff",
-            weight: 2,
-            fillColor: "#ffffff",
-            fillOpacity: 0.5,
-          })
-            .bindPopup(`Sector boundary ${label}`)
-            .addTo(group);
-        }
+        if (!line) continue;
+        L.polyline(
+          [
+            [line.a.lat, line.a.lon],
+            [line.b.lat, line.b.lon],
+          ],
+          { color: "#ffffff", weight: 2, dashArray: "6 4" },
+        )
+          .bindPopup(`Sector boundary ${label}`)
+          .addTo(group);
       }
     }
 
