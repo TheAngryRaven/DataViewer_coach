@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-25
+
+### Fixed
+
+- Track map crashed the Coach panel ("Invalid LatLng object: (undefined,
+  undefined)") when a course had sector boundaries. The host's `sector2`/
+  `sector3` are **line segments** (`{ a, b }`), not single points, so the old
+  point-marker code read `undefined` lat/lon. They're now drawn as polylines
+  (matching start/finish), and the local `Course` stub types them as `SectorLine`.
+
 ## [0.2.2] - 2026-05-25
 
 ### Fixed

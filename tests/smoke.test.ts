@@ -15,7 +15,7 @@ const storage: PluginStore = {
 describe("eye-in-the-sky plugin", () => {
   it("exposes its identity", () => {
     expect(plugin.id).toBe("ai-coaching");
-    expect(plugin.version).toBe("0.2.2");
+    expect(plugin.version).toBe("0.2.3");
     expect(plugin.priority).toBe(100);
   });
 
