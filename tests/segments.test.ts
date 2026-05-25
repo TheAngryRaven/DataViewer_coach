@@ -6,6 +6,7 @@ import type { CornerDelta } from "../analysis/segments";
 import {
   apexOffsets,
   brakingPoints,
+  cornerExits,
   cornerTimeLoss,
   rankByTimeLost,
   sectorDeltas,
@@ -133,6 +134,30 @@ describe("apexOffsets", () => {
     const [offset] = apexOffsets(window, grid, speed, flat);
     expect(offset.confident).toBe(false);
     expect(offset.kind).toBe("on");
+  });
+});
+
+describe("cornerExits", () => {
+  const grid = Array.from({ length: 11 }, (_, i) => i * 10); // 0..100, 10 m spacing
+  const speed = [30, 10, 28, 30, 30, 30, 30, 30, 12, 30, 26];
+  // Corner 0 exits at idx 2 (dist 20); next corner enters at idx 8 (dist 80) -> 60 m straight.
+  // Corner 1 exits at idx 10 (dist 100); lap ends there -> no straight.
+  const corners = [corner(0, 0, 1, 2, grid), corner(1, 8, 9, 10, grid)];
+
+  it("reads exit speed and flags corners with a following straight", () => {
+    const result = cornerExits(grid, speed, corners, 60);
+    expect(result[0]).toEqual({
+      cornerIndex: 0,
+      exitSpeedMps: 28,
+      followingStraightM: 60,
+      exitCritical: true,
+    });
+    expect(result[1]).toEqual({
+      cornerIndex: 1,
+      exitSpeedMps: 26,
+      followingStraightM: 0,
+      exitCritical: false,
+    });
   });
 });
 

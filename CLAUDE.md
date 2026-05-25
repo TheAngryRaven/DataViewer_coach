@@ -29,6 +29,22 @@ not introduce abstractions, config, or dependencies ahead of need.
   `vitest.config.ts`). Keep both in sync.
 - Type-only files (e.g. `plugins/types.ts`) are excluded from coverage.
 
+## References & citations
+
+Analysis code encodes real racing/engineering knowledge, not vibes. When you add
+or change a metric, heuristic, or threshold in `analysis/`:
+
+- Ground it with a **loose citation** in `REFERENCES.md` (author + work + what it
+  supports — no page numbers, DOIs, or ISBNs; keep it loose, but never vaguer
+  than naming the author and title). Reuse an existing entry where one fits.
+- Point to it in a short code comment near the logic (e.g. `// exit priority —
+  see REFERENCES.md (Going Faster!)`).
+- No "vibes" thresholds: a magic number should trace to a source, or be clearly
+  labelled in a comment as a provisional heuristic to tune.
+- Driver philosophy may be cited **only from books a driver actually authored**
+  (Stewart, Lauda, Clark, Prost, …). Never drop in driver "quotes" — most are
+  apocryphal and read as cheesy.
+
 ## Commands
 
 ```
