@@ -164,14 +164,16 @@ export default function CoachDashboard(props: PluginPanelProps) {
         <Section title={`Track map — corners & apex (best lap ${bestLap.lapNumber})`}>
           <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
             Amber = detected corner window · red dot = V-Min (slowest point) · cyan
-            ring = geometric apex (curvature peak) · dashed line = the offset
-            between them. Click any marker; toggle a satellite background top-right.
+            ring = geometric apex (curvature peak) · dashed line = apex offset ·
+            green dot = corner exit onto a straight (grey = no straight follows).
+            Click any marker; toggle a satellite background top-right.
           </p>
           <RaceLineMap
             samples={data.samples}
             lap={bestLap}
             corners={report.corners}
             apex={report.apex}
+            exits={report.exits}
             course={course}
             useKph={useKph}
             height={420}

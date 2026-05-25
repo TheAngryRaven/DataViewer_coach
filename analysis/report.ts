@@ -21,6 +21,7 @@ import { curvatureForLap } from "./curvature";
 import {
   apexOffsets,
   brakingPoints,
+  cornerExits,
   cornerTimeLoss,
   rankByTimeLost,
   sectorDeltas,
@@ -28,6 +29,7 @@ import {
   type ApexOffset,
   type BrakingPoint,
   type CornerDelta,
+  type CornerExit,
   type SectorDelta,
   type ThrottlePoint,
 } from "./segments";
@@ -61,6 +63,8 @@ export interface CoachingReport {
   topTimeLoss: CornerDelta[];
   /** V-Min vs geometric apex per corner (early/late/on); diagnostic. */
   apex: ApexOffset[];
+  /** Exit speed + whether a straight follows (exit priority), per corner. */
+  exits: CornerExit[];
   braking: BrakingPoint[];
   throttle: ThrottlePoint[];
 }
@@ -114,6 +118,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     cornerDeltas: [],
     topTimeLoss: [],
     apex: [],
+    exits: [],
     braking: [],
     throttle: [],
   };
@@ -157,6 +162,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     cornerDeltas,
     topTimeLoss: rankByTimeLost(cornerDeltas, TIME_LOSS_LIMIT),
     apex: apexOffsets(corners, grid, referenceProfile.speedMps, curvature),
+    exits: cornerExits(grid, referenceProfile.speedMps, corners),
     braking: brakingPoints(inspect, corners),
     throttle: capabilities.throttle ? throttleApplication(inspect, corners) : [],
   };

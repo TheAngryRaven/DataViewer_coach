@@ -63,6 +63,12 @@ The coverage badge is self-hosted: the `Coverage` workflow generates a
 [shields.io endpoint](https://shields.io/endpoint) JSON and publishes it to the
 `badges` branch — no third-party coverage service is involved.
 
+## References
+
+The analysis is grounded in established racing technique and telemetry practice,
+not guesswork. See [REFERENCES.md](./REFERENCES.md) for the project's loose
+citations and which sources back which metrics.
+
 ## License
 
 [GPL-3.0-or-later](./LICENSE).
