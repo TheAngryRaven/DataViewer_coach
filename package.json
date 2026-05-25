@@ -1,6 +1,6 @@
 {
   "name": "@theangryraven/eye-in-the-sky",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "AI driver coach framework plugin for DataViewer.",
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -40,7 +40,7 @@
   },
   "peerDependencies": {
     "leaflet": "^1.9.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^18.3 || ^19.0.0",
+    "react-dom": "^18.3 || ^19.0.0"
   }
 }
