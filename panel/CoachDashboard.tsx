@@ -131,6 +131,30 @@ export default function CoachDashboard(props: PluginPanelProps) {
         </Section>
       )}
 
+      {report.apex.some((a) => a.confident) && (
+        <Section title="Apex line (V-Min vs geometric apex)">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+            {report.apex
+              .filter((a) => a.confident)
+              .map((a) => (
+                <div
+                  key={a.cornerIndex}
+                  style={{ display: "flex", flexDirection: "column", padding: "4px 10px", borderRadius: 6, background: "rgba(127,127,127,0.12)" }}
+                >
+                  <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+                    Corner {a.cornerIndex + 1}
+                  </span>
+                  <span style={{ fontVariantNumeric: "tabular-nums", color: a.kind === "on" ? REFERENCE_STROKE : SUBJECT_STROKE }}>
+                    {a.kind === "on"
+                      ? "on the apex"
+                      : `${a.kind} apex ${a.offsetM > 0 ? "+" : "-"}${Math.abs(Math.round(a.offsetM))} m`}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </Section>
+      )}
+
       {report.sectorDeltas.length > 0 && (
         <Section title="Sector deltas vs best">
           <div style={{ display: "flex", gap: 24 }}>

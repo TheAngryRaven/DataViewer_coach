@@ -4,6 +4,7 @@ import type { LapProfile } from "../analysis/distance";
 import type { Corner } from "../analysis/corners";
 import type { CornerDelta } from "../analysis/segments";
 import {
+  apexOffsets,
   brakingPoints,
   cornerTimeLoss,
   rankByTimeLost,
@@ -97,6 +98,41 @@ describe("rankByTimeLost", () => {
   it("keeps only losses, largest first, up to the limit", () => {
     const ranked = rankByTimeLost([make(0, 120), make(1, -50), make(2, 400), make(3, 30)], 2);
     expect(ranked.map((d) => d.cornerIndex)).toEqual([2, 0]);
+  });
+});
+
+describe("apexOffsets", () => {
+  const grid = [0, 10, 20, 30, 40];
+  const speed = [20, 15, 10, 15, 20]; // V-Min at idx 2 (dist 20)
+  const window = [corner(0, 0, 2, 4, grid)];
+
+  it("flags a late apex when V-Min falls after the curvature peak", () => {
+    const curvature = [0, 0.05, 0.01, 0, 0]; // geometric apex at idx 1 (dist 10)
+    const [offset] = apexOffsets(window, grid, speed, curvature);
+    expect(offset.vMinDist).toBe(20);
+    expect(offset.geoApexDist).toBe(10);
+    expect(offset.offsetM).toBe(10);
+    expect(offset.kind).toBe("late");
+    expect(offset.confident).toBe(true);
+  });
+
+  it("flags an early apex when V-Min falls before the curvature peak", () => {
+    const curvature = [0, 0, 0.01, 0.05, 0]; // geometric apex at idx 3 (dist 30)
+    const [offset] = apexOffsets(window, grid, speed, curvature);
+    expect(offset.offsetM).toBe(-10);
+    expect(offset.kind).toBe("early");
+  });
+
+  it("reads 'on' within the deadband", () => {
+    const curvature = [0, 0, 0.05, 0, 0]; // geometric apex coincides with V-Min
+    expect(apexOffsets(window, grid, speed, curvature)[0].kind).toBe("on");
+  });
+
+  it("is not confident (and reads 'on') when there is no real curvature peak", () => {
+    const flat = [0.001, 0.001, 0.001, 0.001, 0.001];
+    const [offset] = apexOffsets(window, grid, speed, flat);
+    expect(offset.confident).toBe(false);
+    expect(offset.kind).toBe("on");
   });
 });
 

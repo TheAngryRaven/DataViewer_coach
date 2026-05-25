@@ -19,11 +19,13 @@ import {
 } from "./corners";
 import { curvatureForLap } from "./curvature";
 import {
+  apexOffsets,
   brakingPoints,
   cornerTimeLoss,
   rankByTimeLost,
   sectorDeltas,
   throttleApplication,
+  type ApexOffset,
   type BrakingPoint,
   type CornerDelta,
   type SectorDelta,
@@ -57,6 +59,8 @@ export interface CoachingReport {
   corners: Corner[];
   cornerDeltas: CornerDelta[];
   topTimeLoss: CornerDelta[];
+  /** V-Min vs geometric apex per corner (early/late/on); diagnostic. */
+  apex: ApexOffset[];
   braking: BrakingPoint[];
   throttle: ThrottlePoint[];
 }
@@ -109,6 +113,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners: [],
     cornerDeltas: [],
     topTimeLoss: [],
+    apex: [],
     braking: [],
     throttle: [],
   };
@@ -124,14 +129,11 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   if (referenceProfile === null) return { ...empty, grid, profiles };
 
   const bestLap = laps.find((lap) => lap.lapNumber === bestLapNumber);
+  // Curvature is needed for the apex offset regardless of the segmentation method.
+  const curvature = bestLap ? curvatureForLap(data.samples, bestLap, grid) : grid.map(() => 0);
   const corners =
-    cornerMethod === "curvature" && bestLap
-      ? detectCornersByCurvature(
-          grid,
-          curvatureForLap(data.samples, bestLap, grid),
-          referenceProfile.speedMps,
-          DEFAULT_CURVATURE_OPTIONS,
-        )
+    cornerMethod === "curvature"
+      ? detectCornersByCurvature(grid, curvature, referenceProfile.speedMps, DEFAULT_CURVATURE_OPTIONS)
       : detectCornersBySpeed(grid, referenceProfile.speedMps, DEFAULT_CORNER_OPTIONS);
   const comparing = subjectProfile !== null && subjectProfile.lapNumber !== bestLapNumber;
   const cornerDeltas = comparing ? cornerTimeLoss(referenceProfile, subjectProfile, corners) : [];
@@ -154,6 +156,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners,
     cornerDeltas,
     topTimeLoss: rankByTimeLost(cornerDeltas, TIME_LOSS_LIMIT),
+    apex: apexOffsets(corners, grid, referenceProfile.speedMps, curvature),
     braking: brakingPoints(inspect, corners),
     throttle: capabilities.throttle ? throttleApplication(inspect, corners) : [],
   };

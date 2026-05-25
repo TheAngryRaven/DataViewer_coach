@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `analysis/curvature.ts` — path curvature in the distance domain: bearings,
   heading unwrapping, and kappa = d(heading)/d(distance), using the host's
   heading (or position-derived bearings as a fallback). Advisory per addon1 §A.6.
+- Per-corner **apex offset** (addon1 §A.3): the signed distance between the
+  driver's V-Min point and the geometric apex (curvature peak), classified
+  early / late / on, with a confidence flag when the geometric apex is
+  ill-defined. Diagnostic only; surfaced in the dashboard and computed for both
+  segmentation methods. Foundation for later line/apex visualizations.
 - `analysis/segments.ts` — per-sector deltas, per-corner time loss vs the best
   lap, a time-loss ranking, and braking-point (Tier-1, speed-derived) and
   throttle-application (Tier-2, gated on a `throttle` channel) reads.

@@ -55,6 +55,18 @@ function minOver(values: number[], lo: number, hi: number): number {
   return min;
 }
 
+function argMinIndex(values: number[], lo: number, hi: number): number {
+  let best = lo;
+  for (let i = lo + 1; i <= hi; i++) if (values[i] < values[best]) best = i;
+  return best;
+}
+
+function argMaxIndex(values: number[], lo: number, hi: number): number {
+  let best = lo;
+  for (let i = lo + 1; i <= hi; i++) if (values[i] > values[best]) best = i;
+  return best;
+}
+
 /**
  * Per-corner time loss of the subject lap vs the reference (best) lap, using the
  * distance-domain delta-time integrated across each corner window. Corners are
@@ -83,6 +95,52 @@ export function rankByTimeLost(deltas: CornerDelta[], limit: number): CornerDelt
     .filter((delta) => delta.timeLostMs > 0)
     .sort((a, b) => b.timeLostMs - a.timeLostMs)
     .slice(0, limit);
+}
+
+export interface ApexOffset {
+  cornerIndex: number;
+  /** Distance of the driver's slowest point, V-Min (m). */
+  vMinDist: number;
+  /** Distance of the geometric apex, the |curvature| peak (m). */
+  geoApexDist: number;
+  /** vMinDist - geoApexDist (m): >0 slows after the apex (late), <0 before it (early). */
+  offsetM: number;
+  kind: "early" | "late" | "on";
+  /** Whether the geometric apex is well-defined (a real curvature peak in the window). */
+  confident: boolean;
+}
+
+/**
+ * Per-corner apex offset (addon1 §A.3): where the driver's minimum-speed point
+ * falls relative to the geometric apex (the curvature peak). Diagnostic only —
+ * a late apex onto a straight is often correct (addon1 §A.2), and the geometric
+ * apex depends on GPS path quality, so it carries a confidence flag (§A.6).
+ * Computed at grid resolution; sub-grid parabolic refinement can come later.
+ */
+export function apexOffsets(
+  corners: Corner[],
+  grid: number[],
+  speedMps: number[],
+  curvaturePerM: number[],
+  deadbandM = 2,
+  minCurvaturePerM = 0.005,
+): ApexOffset[] {
+  const absKappa = curvaturePerM.map(Math.abs);
+  return corners.map((corner) => {
+    const vMinIdx = argMinIndex(speedMps, corner.startIdx, corner.endIdx);
+    const geoIdx = argMaxIndex(absKappa, corner.startIdx, corner.endIdx);
+    const offsetM = grid[vMinIdx] - grid[geoIdx];
+    const confident = absKappa[geoIdx] >= minCurvaturePerM;
+    const kind = !confident || Math.abs(offsetM) <= deadbandM ? "on" : offsetM > 0 ? "late" : "early";
+    return {
+      cornerIndex: corner.index,
+      vMinDist: grid[vMinIdx],
+      geoApexDist: grid[geoIdx],
+      offsetM,
+      kind,
+      confident,
+    };
+  });
 }
 
 export interface BrakingPoint {
