@@ -9,7 +9,15 @@ import {
   deltaTimeMs,
   type LapProfile,
 } from "./distance";
-import { DEFAULT_CORNER_OPTIONS, detectCorners, type Corner } from "./corners";
+import {
+  DEFAULT_CORNER_OPTIONS,
+  DEFAULT_CURVATURE_OPTIONS,
+  detectCornersByCurvature,
+  detectCornersBySpeed,
+  type Corner,
+  type CornerMethod,
+} from "./corners";
+import { curvatureForLap } from "./curvature";
 import {
   brakingPoints,
   cornerTimeLoss,
@@ -36,6 +44,7 @@ export interface CoachingReport {
   capabilities: SessionCapabilities;
   sampleRateHz: number;
   useKph: boolean;
+  cornerMethod: CornerMethod;
   bestLapNumber: number | null;
   subjectLapNumber: number | null;
   sectorDeltas: SectorDelta[];
@@ -58,6 +67,8 @@ export interface ReportInput {
   selectedLapNumber: number | null;
   course: Course | null;
   useKph: boolean;
+  /** Corner-segmentation method; defaults to "speed". */
+  cornerMethod?: CornerMethod;
 }
 
 /** Second-fastest lap number, so there's always something to compare to the best. */
@@ -68,6 +79,7 @@ function secondFastestLapNumber(laps: Lap[], bestLapNumber: number | null): numb
 
 export function buildCoachingReport(input: ReportInput): CoachingReport {
   const { data, laps, selectedLapNumber, useKph } = input;
+  const cornerMethod: CornerMethod = input.cornerMethod ?? "speed";
   const session = buildSession(data, laps);
   const debrief = buildDebrief(session);
   const capabilities = data ? detectCapabilities(data) : session.capabilities;
@@ -85,6 +97,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     capabilities,
     sampleRateHz: 0,
     useKph,
+    cornerMethod,
     bestLapNumber,
     subjectLapNumber,
     sectorDeltas: [],
@@ -110,7 +123,16 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   const subjectProfile = profiles.find((p) => p.lapNumber === subjectLapNumber) ?? null;
   if (referenceProfile === null) return { ...empty, grid, profiles };
 
-  const corners = detectCorners(grid, referenceProfile.speedMps, DEFAULT_CORNER_OPTIONS);
+  const bestLap = laps.find((lap) => lap.lapNumber === bestLapNumber);
+  const corners =
+    cornerMethod === "curvature" && bestLap
+      ? detectCornersByCurvature(
+          grid,
+          curvatureForLap(data.samples, bestLap, grid),
+          referenceProfile.speedMps,
+          DEFAULT_CURVATURE_OPTIONS,
+        )
+      : detectCornersBySpeed(grid, referenceProfile.speedMps, DEFAULT_CORNER_OPTIONS);
   const comparing = subjectProfile !== null && subjectProfile.lapNumber !== bestLapNumber;
   const cornerDeltas = comparing ? cornerTimeLoss(referenceProfile, subjectProfile, corners) : [];
 

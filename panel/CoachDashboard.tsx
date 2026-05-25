@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type uPlot from "uplot";
 import type { PluginPanelProps } from "@/plugins/panels";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
+import type { CornerMethod } from "../analysis/corners";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { UplotChart } from "./UplotChart";
 
@@ -16,7 +17,11 @@ const SUBJECT_STROKE = "#f59e0b";
 
 export default function CoachDashboard(props: PluginPanelProps) {
   const { data, laps, useKph } = props;
-  const report = useMemo(() => buildCoachingReport(props), [props]);
+  const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
+  const report = useMemo(
+    () => buildCoachingReport({ ...props, cornerMethod }),
+    [props, cornerMethod],
+  );
 
   const toSpeed = (mps: number) => (useKph ? mps * MPS_TO_KPH : mps * MPS_TO_MPH);
 
@@ -73,7 +78,10 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 16, height: "100%", overflowY: "auto" }}>
-      <Summary report={report} useKph={useKph} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <Summary report={report} useKph={useKph} />
+        <MethodToggle method={cornerMethod} onChange={setCornerMethod} cornerCount={report.corners.length} />
+      </div>
 
       {speedChart && (
         <Section title="Speed trace">
@@ -186,6 +194,52 @@ function DataQuality({ report }: { report: CoachingReport }) {
       {sampleRateHz > 0 ? `${Math.round(sampleRateHz)} Hz` : "rate n/a"} · {gNote}
       {extras.length > 0 ? ` · ${extras.join(", ")}` : ""}
     </p>
+  );
+}
+
+function MethodToggle({
+  method,
+  onChange,
+  cornerCount,
+}: {
+  method: CornerMethod;
+  onChange: (method: CornerMethod) => void;
+  cornerCount: number;
+}) {
+  const options: { value: CornerMethod; label: string }[] = [
+    { value: "speed", label: "Speed (V-Min)" },
+    { value: "curvature", label: "Curvature" },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      <div style={{ display: "inline-flex", borderRadius: 6, overflow: "hidden", border: "1px solid rgba(127,127,127,0.3)" }}>
+        {options.map((option) => {
+          const active = option.value === method;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              aria-pressed={active}
+              style={{
+                border: "none",
+                cursor: "pointer",
+                padding: "5px 12px",
+                fontSize: 13,
+                background: active ? "rgba(34,211,238,0.2)" : "transparent",
+                color: "inherit",
+                fontWeight: active ? 600 : 400,
+              }}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+        {cornerCount} corner{cornerCount === 1 ? "" : "s"} detected
+      </span>
+    </div>
   );
 }
 

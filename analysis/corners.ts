@@ -1,40 +1,65 @@
 import { movingAverage } from "./signal";
 
-// Corner segmentation in the distance domain. We segment on the *speed* trace
-// (the architecture's scored quantity, addon1 §A.2): each corner is a prominent
-// speed valley (V-Min) bounded by the surrounding speed peaks (braking start ->
-// corner exit). This is robust to GPS/heading noise; curvature-based apex-
-// *location* refinement (addon1 §A.3) is a later, diagnostic-only addition.
+// Corner segmentation in the distance domain, offered two ways:
+//
+// - "speed": prominent valleys in the *speed* trace. The apex is the V-Min point
+//   (the scored quantity, addon1 §A.2); robust to GPS/heading noise.
+// - "curvature": prominent peaks in |curvature|. The apex is the *geometric*
+//   apex (point of minimum radius, addon1 §A.3); grounded in track geometry but
+//   softer (depends on GPS path quality).
+//
+// Both share one prominence-based segmenter and return the same `Corner` shape,
+// so everything downstream (time loss, braking, throttle) is method-agnostic.
+
+export type CornerMethod = "speed" | "curvature";
 
 export interface Corner {
   /** 0-based ordinal along the lap. */
   index: number;
-  /** Grid index where the corner window begins (preceding speed peak). */
+  /** Grid index where the corner window begins (entry: speed peak / low curvature). */
   startIdx: number;
-  /** Grid index of the minimum-speed point (V-Min). */
+  /** Grid index of the apex (V-Min for "speed", curvature peak for "curvature"). */
   apexIdx: number;
-  /** Grid index where the corner window ends (following speed peak). */
+  /** Grid index where the corner window ends (exit: speed peak / low curvature). */
   endIdx: number;
   startDist: number;
   apexDist: number;
   endDist: number;
-  /** Speed at the apex (m/s). */
+  /** Minimum speed within the window (m/s). */
   minSpeedMps: number;
 }
 
-export interface CornerOptions {
-  /** Moving-average radius applied to speed before detection. */
+interface SegmentOptions {
   smoothRadius: number;
-  /** A valley counts as a corner when its prominence is at least this fraction of the speed range. */
   prominenceFrac: number;
-  /** ...and at least this absolute drop (m/s), so flat sections don't register. */
+  /** Minimum prominence in the signal's own units, so flat sections don't register. */
+  minProminence: number;
+}
+
+export interface CornerOptions {
+  smoothRadius: number;
+  prominenceFrac: number;
+  /** Minimum speed drop (m/s) for a valley to count as a corner. */
   minProminenceMps: number;
+}
+
+export interface CurvatureCornerOptions {
+  smoothRadius: number;
+  prominenceFrac: number;
+  /** Minimum |curvature| rise (1/m) for a peak to count as a corner. */
+  minProminencePerM: number;
 }
 
 export const DEFAULT_CORNER_OPTIONS: CornerOptions = {
   smoothRadius: 2,
   prominenceFrac: 0.12,
   minProminenceMps: 1.5,
+};
+
+export const DEFAULT_CURVATURE_OPTIONS: CurvatureCornerOptions = {
+  smoothRadius: 3,
+  prominenceFrac: 0.15,
+  minProminencePerM: 0.005,
 };
 
 function argmaxInRange(values: number[], lo: number, hi: number): number {
@@ -49,37 +74,49 @@ function argminInRange(values: number[], lo: number, hi: number): number {
   return best;
 }
 
+/**
+ * Indices of local minima, collapsing equal-valued plateaus to their centre so a
+ * flat valley registers once (not as two edge minima). A minimum requires a
+ * strict descent before and a strict ascent after the plateau.
+ */
 function localMinima(values: number[]): number[] {
   const mins: number[] = [];
-  for (let i = 1; i < values.length - 1; i++) {
-    const downFromLeft = values[i] <= values[i - 1];
-    const upToRight = values[i] <= values[i + 1];
-    const strict = values[i] < values[i - 1] || values[i] < values[i + 1];
-    if (downFromLeft && upToRight && strict) mins.push(i);
+  const n = values.length;
+  let i = 1;
+  while (i < n - 1) {
+    if (values[i] < values[i - 1]) {
+      let j = i;
+      while (j < n - 1 && values[j + 1] === values[i]) j++;
+      if (j < n - 1 && values[j + 1] > values[i]) mins.push(Math.floor((i + j) / 2));
+      i = j + 1;
+    } else {
+      i++;
+    }
   }
   return mins;
 }
 
-/**
- * Detect corners on a distance-gridded speed trace. `grid` and `speedMps` must
- * be the same length and share an index space (e.g. a `LapProfile`).
- */
-export function detectCorners(
-  grid: number[],
-  speedMps: number[],
-  options: CornerOptions = DEFAULT_CORNER_OPTIONS,
-): Corner[] {
-  const n = speedMps.length;
-  if (n < 3 || grid.length !== n) return [];
+interface Segment {
+  startIdx: number;
+  valleyIdx: number;
+  endIdx: number;
+}
 
-  const smooth = movingAverage(speedMps, options.smoothRadius);
+/**
+ * Find prominent valleys in `values`: each valley is bounded by the surrounding
+ * peaks, and kept only when its prominence (the lower bounding peak minus the
+ * valley) clears the threshold. To find peaks instead, pass the negated signal.
+ */
+function segmentByValleys(values: number[], options: SegmentOptions): Segment[] {
+  const n = values.length;
+  if (n < 3) return [];
+  const smooth = movingAverage(values, options.smoothRadius);
   const range = Math.max(...smooth) - Math.min(...smooth);
   if (range <= 0) return [];
-  const threshold = Math.max(options.prominenceFrac * range, options.minProminenceMps);
+  const threshold = Math.max(options.prominenceFrac * range, options.minProminence);
 
   const valleys = localMinima(smooth);
-  const corners: Corner[] = [];
-
+  const segments: Segment[] = [];
   for (let k = 0; k < valleys.length; k++) {
     const v = valleys[k];
     const leftBound = k === 0 ? 0 : valleys[k - 1];
@@ -87,22 +124,70 @@ export function detectCorners(
     const startIdx = argmaxInRange(smooth, leftBound, v);
     const endIdx = argmaxInRange(smooth, v, rightBound);
     if (startIdx >= endIdx) continue;
-
     const prominence = Math.min(smooth[startIdx], smooth[endIdx]) - smooth[v];
     if (prominence < threshold) continue;
-
-    const apexIdx = argminInRange(speedMps, startIdx, endIdx);
-    corners.push({
-      index: 0,
-      startIdx,
-      apexIdx,
-      endIdx,
-      startDist: grid[startIdx],
-      apexDist: grid[apexIdx],
-      endDist: grid[endIdx],
-      minSpeedMps: speedMps[apexIdx],
-    });
+    segments.push({ startIdx, valleyIdx: v, endIdx });
   }
+  return segments;
+}
 
-  return corners.map((corner, index) => ({ ...corner, index }));
+/** Corners as prominent speed valleys; apex = V-Min. */
+export function detectCornersBySpeed(
+  grid: number[],
+  speedMps: number[],
+  options: CornerOptions = DEFAULT_CORNER_OPTIONS,
+): Corner[] {
+  if (grid.length !== speedMps.length) return [];
+  const segments = segmentByValleys(speedMps, {
+    smoothRadius: options.smoothRadius,
+    prominenceFrac: options.prominenceFrac,
+    minProminence: options.minProminenceMps,
+  });
+  return segments.map((segment, index) => {
+    const apexIdx = argminInRange(speedMps, segment.startIdx, segment.endIdx);
+    return {
+      index,
+      startIdx: segment.startIdx,
+      apexIdx,
+      endIdx: segment.endIdx,
+      startDist: grid[segment.startIdx],
+      apexDist: grid[apexIdx],
+      endDist: grid[segment.endIdx],
+      minSpeedMps: speedMps[apexIdx],
+    };
+  });
+}
+
+/** Corners as prominent |curvature| peaks; apex = geometric apex (curvature peak). */
+export function detectCornersByCurvature(
+  grid: number[],
+  curvaturePerM: number[],
+  speedMps: number[],
+  options: CurvatureCornerOptions = DEFAULT_CURVATURE_OPTIONS,
+): Corner[] {
+  if (grid.length !== curvaturePerM.length || grid.length !== speedMps.length) return [];
+  const absKappa = curvaturePerM.map(Math.abs);
+  // Peaks of |kappa| are valleys of -|kappa|; reuse the valley segmenter.
+  const segments = segmentByValleys(
+    absKappa.map((v) => -v),
+    {
+      smoothRadius: options.smoothRadius,
+      prominenceFrac: options.prominenceFrac,
+      minProminence: options.minProminencePerM,
+    },
+  );
+  return segments.map((segment, index) => {
+    const apexIdx = argmaxInRange(absKappa, segment.startIdx, segment.endIdx);
+    const minSpeedIdx = argminInRange(speedMps, segment.startIdx, segment.endIdx);
+    return {
+      index,
+      startIdx: segment.startIdx,
+      apexIdx,
+      endIdx: segment.endIdx,
+      startDist: grid[segment.startIdx],
+      apexDist: grid[apexIdx],
+      endDist: grid[segment.endIdx],
+      minSpeedMps: speedMps[minSpeedIdx],
+    };
+  });
 }

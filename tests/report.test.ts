@@ -8,10 +8,19 @@ function speedAt(i: number): number {
   return i <= 10 ? 30 - 2 * i : 10 + 2 * (i - 10);
 }
 
+// Heading holds straight, then sweeps sharply through the apex and straightens
+// again, so the path has a real curvature peak for the curvature method to find.
+function headingDeg(i: number): number {
+  if (i <= 8) return 90;
+  if (i <= 11) return 90 - 30 * (i - 8);
+  return 0;
+}
+
 function lapRun(startT: number, dt: number): GpsSample[] {
-  return Array.from({ length: 21 }, (_, i) =>
-    gpsSample(startT + i * dt, 0, i * 0.001, speedAt(i), { throttle: i > 10 ? 80 : 0 }),
-  );
+  return Array.from({ length: 21 }, (_, i) => ({
+    ...gpsSample(startT + i * dt, 0, i * 0.0002, speedAt(i), { throttle: i > 10 ? 80 : 0 }),
+    heading: headingDeg(i),
+  }));
 }
 
 function fieldMappings(ids: string[]): Record<string, FieldMapping> {
@@ -98,6 +107,15 @@ describe("buildCoachingReport", () => {
     const report = buildCoachingReport(input({ data: noThrottle }));
     expect(report.capabilities.throttle).toBe(false);
     expect(report.throttle).toEqual([]);
+  });
+
+  it("segments corners by curvature when that method is requested", () => {
+    const speedReport = buildCoachingReport(input({ cornerMethod: "speed" }));
+    const curvatureReport = buildCoachingReport(input({ cornerMethod: "curvature" }));
+
+    expect(speedReport.cornerMethod).toBe("speed");
+    expect(curvatureReport.cornerMethod).toBe("curvature");
+    expect(curvatureReport.corners.length).toBeGreaterThanOrEqual(1);
   });
 
   it("falls back to the second-best lap when none is selected", () => {

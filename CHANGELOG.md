@@ -18,8 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cumulative arc length (haversine), resampling onto a shared distance grid,
   per-lap profiles (speed, elapsed time, and optional resampled channels), and
   per-distance lap-to-lap time delta.
-- `analysis/corners.ts` — speed-valley corner segmentation in the distance domain
-  (V-Min apex + braking/exit window bounds), robust to GPS noise.
+- `analysis/corners.ts` — corner segmentation in the distance domain, two ways:
+  **speed** (prominent speed valleys; apex = V-Min, robust to GPS noise) and
+  **curvature** (prominent |curvature| peaks; apex = the geometric apex). Both
+  share one prominence-based segmenter and return the same shape, so the
+  downstream reads are method-agnostic. The dashboard exposes a toggle.
+- `analysis/curvature.ts` — path curvature in the distance domain: bearings,
+  heading unwrapping, and kappa = d(heading)/d(distance), using the host's
+  heading (or position-derived bearings as a fallback). Advisory per addon1 §A.6.
 - `analysis/segments.ts` — per-sector deltas, per-corner time loss vs the best
   lap, a time-loss ranking, and braking-point (Tier-1, speed-derived) and
   throttle-application (Tier-2, gated on a `throttle` channel) reads.
