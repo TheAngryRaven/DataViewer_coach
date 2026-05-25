@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `REFERENCES.md` — the project's "loose citations" list (racing-line/apex canon,
+  lap-time-optimization literature, telemetry-analysis practice, and
+  driver-authored references), plus a code→source table. A `CLAUDE.md` rule now
+  requires new `analysis/` metrics/heuristics to cite a source there (no "vibes"
+  thresholds; driver philosophy only from driver-authored books, no quotes).
+- Per-corner **exit read** (`cornerExits`): exit speed and whether a meaningful
+  straight follows ("exit-critical"), grounded in exit priority. Surfaced on the
+  track map as exit dots (green when a straight follows, grey otherwise) and in
+  the corner popups (exit speed + following-straight length).
+
 ## [0.2.3] - 2026-05-25
 
 ### Fixed

@@ -91,6 +91,8 @@ describe("buildCoachingReport", () => {
     expect(report.braking).toHaveLength(report.corners.length);
     expect(report.apex).toHaveLength(report.corners.length);
     expect(["early", "late", "on"]).toContain(report.apex[0].kind);
+    expect(report.exits).toHaveLength(report.corners.length);
+    expect(typeof report.exits[0].exitCritical).toBe("boolean");
     // Subject lap is slower overall, so it should show net time lost somewhere.
     expect(report.deltaMs[report.deltaMs.length - 1]).toBeGreaterThan(0);
     expect(report.sectorDeltas).toHaveLength(3);

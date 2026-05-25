@@ -143,6 +143,41 @@ export function apexOffsets(
   });
 }
 
+export interface CornerExit {
+  cornerIndex: number;
+  /** Speed at the corner-window exit (start of the following segment), m/s. */
+  exitSpeedMps: number;
+  /** Distance from this corner's exit to the next corner's entry (or lap end), metres. */
+  followingStraightM: number;
+  /** A meaningful straight follows — where exit speed compounds and exit priority matters. */
+  exitCritical: boolean;
+}
+
+/**
+ * Per-corner exit read. Exit speed matters most where the corner feeds a
+ * straight, because the gain is carried down its whole length (exit priority —
+ * see REFERENCES.md: Going Faster!, Speed Secrets, Driver61). `minStraightM` is
+ * a provisional threshold for "a straight follows" — a heuristic to tune.
+ */
+export function cornerExits(
+  grid: number[],
+  speedMps: number[],
+  corners: Corner[],
+  minStraightM = 60,
+): CornerExit[] {
+  const lapEnd = grid.length > 0 ? grid[grid.length - 1] : 0;
+  return corners.map((corner, i) => {
+    const nextEntry = i + 1 < corners.length ? corners[i + 1].startDist : lapEnd;
+    const followingStraightM = Math.max(0, nextEntry - corner.endDist);
+    return {
+      cornerIndex: corner.index,
+      exitSpeedMps: speedMps[corner.endIdx],
+      followingStraightM,
+      exitCritical: followingStraightM >= minStraightM,
+    };
+  });
+}
+
 export interface BrakingPoint {
   cornerIndex: number;
   /** Distance where braking begins, or null if no clear braking zone precedes the apex. */

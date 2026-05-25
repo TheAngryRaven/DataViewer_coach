@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Course, GpsSample, Lap } from "@/types/racing";
 import type { Corner } from "../analysis/corners";
-import type { ApexOffset } from "../analysis/segments";
+import type { ApexOffset, CornerExit } from "../analysis/segments";
 import { lapTrack, positionAtDistance } from "../analysis/distance";
 
 // Offline-first race-line map. Draws the reference lap straight from GPS samples
@@ -19,6 +19,8 @@ const CORNER_LINE = "#f59e0b";
 const VMIN_COLOR = "#ef4444";
 const GEO_COLOR = "#22d3ee";
 const OFFSET_COLOR = "#a78bfa";
+const EXIT_COLOR = "#22c55e";
+const EXIT_DULL = "#94a3b8";
 
 // Host basemaps, used verbatim so the coach map matches the app (see brief).
 const TILES = {
@@ -40,6 +42,7 @@ export interface RaceLineMapProps {
   lap: Lap;
   corners: Corner[];
   apex: ApexOffset[];
+  exits: CornerExit[];
   course: Course | null;
   useKph: boolean;
   height: number;
@@ -54,7 +57,7 @@ function numberIcon(label: string): L.DivIcon {
   });
 }
 
-export function RaceLineMap({ samples, lap, corners, apex, course, useKph, height }: RaceLineMapProps) {
+export function RaceLineMap({ samples, lap, corners, apex, exits, course, useKph, height }: RaceLineMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -94,6 +97,9 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
     L.polyline(latlngs, { color: BASE_LINE, weight: 2, opacity: 0.7 }).addTo(group);
 
     const apexByCorner = new Map(apex.map((a) => [a.cornerIndex, a]));
+    const exitByCorner = new Map(exits.map((e) => [e.cornerIndex, e]));
+    const fmtSpeed = (mps: number) =>
+      useKph ? `${(mps * MPS_TO_KPH).toFixed(1)} km/h` : `${(mps * MPS_TO_MPH).toFixed(1)} mph`;
 
     for (const corner of corners) {
       const segment = latlngs.filter(
@@ -104,10 +110,8 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
       }
 
       const a = apexByCorner.get(corner.index);
+      const exit = exitByCorner.get(corner.index);
       const vMin = positionAtDistance(track, corner.apexDist);
-      const speedMph = (corner.minSpeedMps * MPS_TO_MPH).toFixed(1);
-      const speedKph = (corner.minSpeedMps * MPS_TO_KPH).toFixed(1);
-      const speedLabel = useKph ? `${speedKph} km/h` : `${speedMph} mph`;
 
       let apexLine = `Corner ${corner.index + 1}`;
       if (a) {
@@ -116,7 +120,12 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
             ? " · on the apex"
             : ` · ${a.kind} apex ${a.offsetM > 0 ? "+" : "-"}${Math.abs(Math.round(a.offsetM))} m`;
       }
-      const popup = `<strong>${apexLine}</strong><br/>V-Min ${speedLabel}`;
+      let exitLine = "";
+      if (exit) {
+        exitLine = `<br/>Exit ${fmtSpeed(exit.exitSpeedMps)}`;
+        if (exit.exitCritical) exitLine += ` &rarr; straight ${Math.round(exit.followingStraightM)} m`;
+      }
+      const popup = `<strong>${apexLine}</strong><br/>V-Min ${fmtSpeed(corner.minSpeedMps)}${exitLine}`;
 
       // Connector from V-Min to the geometric apex when the latter is well-defined.
       if (a?.confident) {
@@ -152,6 +161,21 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
       L.marker([vMin.lat, vMin.lon], { icon: numberIcon(String(corner.index + 1)) })
         .bindPopup(popup)
         .addTo(group);
+
+      // Exit point: green when a straight follows (exit speed compounds there).
+      if (exit) {
+        const exitPos = positionAtDistance(track, corner.endDist);
+        const color = exit.exitCritical ? EXIT_COLOR : EXIT_DULL;
+        L.circleMarker([exitPos.lat, exitPos.lon], {
+          radius: 4,
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.85,
+        })
+          .bindPopup(popup)
+          .addTo(group);
+      }
     }
 
     if (course !== null) {
@@ -182,7 +206,7 @@ export function RaceLineMap({ samples, lap, corners, apex, course, useKph, heigh
     }
 
     map.fitBounds(L.latLngBounds(latlngs), { padding: [24, 24] });
-  }, [samples, lap, corners, apex, course, useKph]);
+  }, [samples, lap, corners, apex, exits, course, useKph]);
 
   // Optional online tile background, under the race line.
   useEffect(() => {
