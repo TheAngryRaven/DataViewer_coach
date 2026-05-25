@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Track map** on the Coach dashboard (Leaflet): draws the best lap's race line
+  straight from GPS samples and overlays the detected corner windows, the V-Min
+  (slowest) point and the geometric apex (curvature peak) per corner, with the
+  offset between them and a click popup naming each corner. Start/finish and
+  sector boundaries are drawn from `course`. An optional online tile background
+  (CARTO dark / Esri satellite) can be toggled on; the map is fully offline
+  without it.
+- `lapTrack` / `positionAtDistance` in `analysis/distance.ts` — map a lap's GPS
+  path and interpolate the lat/lon at any distance along it.
+
+### Changed
+
+- `leaflet`, `react`, and `react-dom` are declared as `peerDependencies` so the
+  plugin reuses the host's single Leaflet/React instance (Leaflet is imported raw
+  and driven imperatively; its CSS is imported inside the lazy panel module).
+
 ## [0.2.0] - 2026-05-25
 
 ### Added

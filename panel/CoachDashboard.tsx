@@ -5,6 +5,7 @@ import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { UplotChart } from "./UplotChart";
+import { RaceLineMap } from "./RaceLineMap";
 
 // Full-bleed (chromeless) Stage-1 dashboard for the Coach tab. A thin view over
 // the pure `buildCoachingReport` analysis; no model, no network. Default-exported
@@ -16,11 +17,15 @@ const REFERENCE_STROKE = "#22d3ee";
 const SUBJECT_STROKE = "#f59e0b";
 
 export default function CoachDashboard(props: PluginPanelProps) {
-  const { data, laps, useKph } = props;
+  const { data, laps, course, useKph } = props;
   const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
   const report = useMemo(
     () => buildCoachingReport({ ...props, cornerMethod }),
     [props, cornerMethod],
+  );
+  const bestLap = useMemo(
+    () => laps.find((lap) => lap.lapNumber === report.bestLapNumber) ?? null,
+    [laps, report.bestLapNumber],
   );
 
   const toSpeed = (mps: number) => (useKph ? mps * MPS_TO_KPH : mps * MPS_TO_MPH);
@@ -152,6 +157,25 @@ export default function CoachDashboard(props: PluginPanelProps) {
                 </div>
               ))}
           </div>
+        </Section>
+      )}
+
+      {data !== null && bestLap !== null && (
+        <Section title={`Track map — corners & apex (best lap ${bestLap.lapNumber})`}>
+          <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
+            Amber = detected corner window · red dot = V-Min (slowest point) · cyan
+            ring = geometric apex (curvature peak) · dashed line = the offset
+            between them. Click any marker; toggle a satellite background top-right.
+          </p>
+          <RaceLineMap
+            samples={data.samples}
+            lap={bestLap}
+            corners={report.corners}
+            apex={report.apex}
+            course={course}
+            useKph={useKph}
+            height={420}
+          />
         </Section>
       )}
 

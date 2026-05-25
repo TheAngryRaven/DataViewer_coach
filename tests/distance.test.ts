@@ -9,6 +9,8 @@ import {
   haversineMeters,
   interpolateAt,
   lapLengthMeters,
+  lapTrack,
+  positionAtDistance,
   resample,
   type LapProfile,
 } from "../analysis/distance";
@@ -169,6 +171,19 @@ describe("degenerate laps", () => {
     const empty = lap(9, 5, 4); // startIndex > endIndex -> no samples
     expect(lapLengthMeters(samples, empty)).toBe(0);
     expect(buildLapProfile(samples, empty, distanceGrid(0, 3)).lengthMeters).toBe(0);
+  });
+});
+
+describe("lapTrack / positionAtDistance", () => {
+  it("exposes the lap path with cumulative distance and interpolates by distance", () => {
+    const samples = eastwardRun(6);
+    const track = lapTrack(samples, lap(1, 1, 4)); // slice of 4 samples, lon 0.001..0.004
+    expect(track.positions).toHaveLength(4);
+    expect(track.distances[0]).toBe(0);
+
+    const mid = positionAtDistance(track, STEP_M / 2); // halfway into the first segment
+    expect(mid.lat).toBe(0);
+    expect(mid.lon).toBeCloseTo(0.0015, 6);
   });
 });
 
