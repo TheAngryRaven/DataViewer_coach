@@ -167,3 +167,28 @@ export function buildComparableProfiles(
 export function deltaTimeMs(reference: LapProfile, lap: LapProfile): number[] {
   return reference.elapsedMs.map((refMs, i) => lap.elapsedMs[i] - refMs);
 }
+
+/** A lap's GPS path with the cumulative distance at each point — for mapping. */
+export interface LapTrack {
+  positions: LatLon[];
+  distances: number[];
+}
+
+/** The lap's lat/lon path plus per-point cumulative distance (metres from lap start). */
+export function lapTrack(samples: GpsSample[], lap: Lap): LapTrack {
+  const slice = lapSamples(samples, lap);
+  return {
+    positions: slice.map((s) => ({ lat: s.lat, lon: s.lon })),
+    distances: cumulativeDistanceMeters(slice),
+  };
+}
+
+/** Interpolate the lat/lon position at a given distance along a lap track (clamped). */
+export function positionAtDistance(track: LapTrack, distanceM: number): LatLon {
+  const lats = track.positions.map((p) => p.lat);
+  const lons = track.positions.map((p) => p.lon);
+  return {
+    lat: interpolateAt(track.distances, lats, distanceM),
+    lon: interpolateAt(track.distances, lons, distanceM),
+  };
+}
