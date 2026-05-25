@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-25
+
+### Fixed
+
+- Widened the `react`/`react-dom` peer range to `^18.3 || ^19.0.0`. 0.2.1
+  required `^19.0.0`, which broke `npm install` (ERESOLVE) on hosts running
+  React 18.3.x; nothing in the dashboard actually needs React 19.
+
 ## [0.2.1] - 2026-05-25
 
 ### Added
