@@ -6,6 +6,7 @@ import type { CornerDelta } from "../analysis/segments";
 import {
   apexOffsets,
   brakingPoints,
+  cornerConsistency,
   cornerExits,
   cornerTimeLoss,
   rankByTimeLost,
@@ -158,6 +159,29 @@ describe("cornerExits", () => {
       followingStraightM: 0,
       exitCritical: false,
     });
+  });
+});
+
+describe("cornerConsistency", () => {
+  const grid = [0, 10, 20, 30, 40];
+  const window = [corner(0, 1, 2, 3, grid)];
+  const t = [0, 1, 2, 3, 4];
+
+  it("measures lap-to-lap V-Min spread/stdev within the corner window", () => {
+    const profiles = [
+      profile(1, grid, [30, 20, 10, 20, 30], t), // V-Min 10
+      profile(2, grid, [30, 22, 14, 22, 30], t), // V-Min 14
+    ];
+    const [c] = cornerConsistency(profiles, window);
+    expect(c.sampleSize).toBe(2);
+    expect(c.vMinSpreadMps).toBe(4);
+    expect(c.vMinStdevMps).toBeCloseTo(Math.sqrt(8), 5);
+  });
+
+  it("reports zero variance for a single lap", () => {
+    const [c] = cornerConsistency([profile(1, grid, [30, 20, 10, 20, 30], t)], window);
+    expect(c.sampleSize).toBe(1);
+    expect(c.vMinStdevMps).toBe(0);
   });
 });
 

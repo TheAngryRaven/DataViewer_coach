@@ -4,6 +4,7 @@ import type { PluginPanelProps } from "@/plugins/panels";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
+import { describeCornerInsight } from "../analysis/coaching";
 import { UplotChart } from "./UplotChart";
 import { RaceLineMap } from "./RaceLineMap";
 
@@ -100,28 +101,17 @@ export default function CoachDashboard(props: PluginPanelProps) {
         </Section>
       )}
 
-      {report.topTimeLoss.length > 0 && (
-        <Section title="Biggest time loss vs your best lap">
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {report.topTimeLoss.map((corner) => {
-              const braking = brakingByCorner.get(corner.cornerIndex);
-              const throttle = throttleByCorner.get(corner.cornerIndex);
-              const speedGap = corner.referenceMinSpeedMps - corner.subjectMinSpeedMps;
+      {report.insights.length > 0 && (
+        <Section title="Where you're losing time (attributed)">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {report.insights.slice(0, 3).map((insight) => {
+              const braking = brakingByCorner.get(insight.cornerIndex);
+              const throttle = throttleByCorner.get(insight.cornerIndex);
               return (
-                <div key={corner.cornerIndex} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>
-                      Corner {corner.cornerIndex + 1}{" "}
-                      <span className="text-muted-foreground">@ {Math.round(corner.apexDist)} m</span>
-                    </span>
-                    <span style={{ color: SUBJECT_STROKE, fontVariantNumeric: "tabular-nums" }}>
-                      +{(corner.timeLostMs / 1000).toFixed(2)}s
-                    </span>
-                  </div>
-                  <span className="text-muted-foreground" style={{ fontSize: 13 }}>
-                    {speedGap > 0.1
-                      ? `Carrying ${formatSpeed(speedGap * MPS_TO_MPH, speedGap * MPS_TO_KPH, useKph)} less at the apex`
-                      : "Apex speed matches your best — losing it elsewhere in the corner"}
+                <div key={insight.cornerIndex} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span>{describeCornerInsight(insight, useKph)}</span>
+                  <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+                    confidence: {insight.confidence}
                     {braking?.brakingDistanceM != null
                       ? ` · braking ${Math.round(braking.brakingDistanceM)} m out`
                       : ""}

@@ -143,6 +143,43 @@ export function apexOffsets(
   });
 }
 
+export interface CornerConsistency {
+  cornerIndex: number;
+  /** Sample standard deviation of per-lap V-Min speed in the corner window (m/s). */
+  vMinStdevMps: number;
+  /** Max - min of per-lap V-Min speed (m/s). */
+  vMinSpreadMps: number;
+  /** Number of laps that contributed. */
+  sampleSize: number;
+}
+
+/**
+ * Lap-to-lap variance of minimum corner speed — the reference-free consistency
+ * signal (addon1 §A.4 layer 2; the most reliable amateur read — see
+ * REFERENCES.md: Speed Secrets, and the driver-authored smoothness canon).
+ * Computed over every supplied lap profile, which must share the corners' grid.
+ */
+export function cornerConsistency(
+  profiles: LapProfile[],
+  corners: Corner[],
+): CornerConsistency[] {
+  return corners.map((corner) => {
+    const vmins = profiles.map((p) => minOver(p.speedMps, corner.startIdx, corner.endIdx));
+    const n = vmins.length;
+    if (n < 2) {
+      return { cornerIndex: corner.index, vMinStdevMps: 0, vMinSpreadMps: 0, sampleSize: n };
+    }
+    const mean = vmins.reduce((sum, v) => sum + v, 0) / n;
+    const variance = vmins.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (n - 1);
+    return {
+      cornerIndex: corner.index,
+      vMinStdevMps: Math.sqrt(variance),
+      vMinSpreadMps: Math.max(...vmins) - Math.min(...vmins),
+      sampleSize: n,
+    };
+  });
+}
+
 export interface CornerExit {
   cornerIndex: number;
   /** Speed at the corner-window exit (start of the following segment), m/s. */
