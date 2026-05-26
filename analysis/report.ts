@@ -33,6 +33,7 @@ import {
   type SectorDelta,
   type ThrottlePoint,
 } from "./segments";
+import { buildCornerInsights, type CornerInsight } from "./coaching";
 
 // Composes the Stage-1 analysis modules into one structured report for the
 // dashboard. The panel stays a thin view over this; everything here is pure and
@@ -61,6 +62,8 @@ export interface CoachingReport {
   corners: Corner[];
   cornerDeltas: CornerDelta[];
   topTimeLoss: CornerDelta[];
+  /** Attributed, confidence-tagged per-corner insights — the Stage-2 input contract. */
+  insights: CornerInsight[];
   /** V-Min vs geometric apex per corner (early/late/on); diagnostic. */
   apex: ApexOffset[];
   /** Exit speed + whether a straight follows (exit priority), per corner. */
@@ -117,6 +120,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners: [],
     cornerDeltas: [],
     topTimeLoss: [],
+    insights: [],
     apex: [],
     exits: [],
     braking: [],
@@ -145,6 +149,8 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
 
   // Braking/throttle read the lap under inspection (the subject, else the best).
   const inspect = subjectProfile ?? referenceProfile;
+  const apex = apexOffsets(corners, grid, referenceProfile.speedMps, curvature);
+  const exits = cornerExits(grid, referenceProfile.speedMps, corners);
 
   return {
     ...empty,
@@ -161,8 +167,9 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners,
     cornerDeltas,
     topTimeLoss: rankByTimeLost(cornerDeltas, TIME_LOSS_LIMIT),
-    apex: apexOffsets(corners, grid, referenceProfile.speedMps, curvature),
-    exits: cornerExits(grid, referenceProfile.speedMps, corners),
+    insights: comparing ? buildCornerInsights(cornerDeltas, exits, apex) : [],
+    apex,
+    exits,
     braking: brakingPoints(inspect, corners),
     throttle: capabilities.throttle ? throttleApplication(inspect, corners) : [],
   };

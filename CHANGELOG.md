@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Structured per-corner **insight records** (`analysis/coaching.ts`) — the
+  Stage-1 → Stage-2 contract (addon2 §B.2, addon1 §A.7). `buildCornerInsights`
+  attributes each corner's time loss to a `rootCause` (`low_min_speed` /
+  `corner_execution` / `none`) with a coarse `confidence`, carrying the
+  supporting numbers as `evidence` (this first pass is strongest on
+  exit-critical corners, where a minimum-speed deficit compounds onto the
+  following straight). `describeCornerInsight` is the free-tier templated
+  phrasing, kept separate from the record so an AI tier can reason over the same
+  structured contract and only rephrase/prioritize — never invent a number.
+  Surfaced in the dashboard's "Where you're losing time (attributed)" section.
+
 ## [0.2.4] - 2026-05-25
 
 ### Added
