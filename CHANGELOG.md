@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is now single-cause but ordered — high V-Min variance takes priority over a
   single-lap min-speed deficit, because consistency is the prerequisite to pace.
   Exposed as `report.consistency`.
+- Two more causes from a **GPS-derived friction circle** (`analysis/grip.ts`):
+  `scrubbing` (holding minimum speed over a wide arc under lateral load) and
+  `unused_grip` (apex clearly under the demonstrated grip envelope). Lateral g is
+  derived as `v²·κ`; both reads are **advisory** (capped at low confidence) and
+  the dashboard says so — a chassis-mounted accelerometer would sharpen them, and
+  many kart loggers mount the sensor on the steering, which isn't ideal here.
+- **Stage-0 data quality** (`analysis/quality.ts`): assesses GPS fix (HDOP /
+  satellites) and logging rate, and **caps insight confidence** accordingly
+  (poor → low, fair → medium). Exposed as `report.quality` and shown in the
+  dashboard footer.
 
 ## [0.2.4] - 2026-05-25
 

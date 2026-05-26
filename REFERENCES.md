@@ -44,6 +44,18 @@ minimum-speed point later than the geometric apex on corners onto straights.
 - **Lot, Biral — "A Curvilinear Abscissa Approach for the Lap Time Optimization
   of Racing Vehicles"** (IFAC, 2014).
 
+## Vehicle dynamics & data quality
+
+- **Friction circle / g-g** — the combined-acceleration limit (lateral + longitudinal
+  bounded together); standard vehicle-dynamics material, treated in the
+  lap-time-optimization literature above and in Carroll Smith. Grounds the
+  `scrubbing` / `unused_grip` reads. We derive lateral g as `v²·κ` from GPS
+  (basic kinematics) — advisory, since a real chassis-mounted accelerometer is
+  more accurate.
+- **GNSS quality (HDOP / satellite count)** — standard GNSS guidance: HDOP near 1
+  is excellent, ≤2 good, >5 poor. Used by `analysis/quality.ts` to cap confidence.
+  Logging-rate bands (10–25 Hz) follow the telemetry vendors below.
+
 ## Telemetry analysis & metrics
 
 - **MoTeC i2 documentation** — "Variance" (time delta at equal track distance),
@@ -72,6 +84,8 @@ Cited only where a driver actually wrote the book; we do not reproduce quotes.
 | Corner detection, V-Min (`analysis/corners.ts`) | Bentley (MIN speed & location); apex literature |
 | Geometric apex, apex offset (`analysis/curvature.ts`, `analysis/segments.ts`) | Heilmeier 2020; Braghin 2008; Brouillard |
 | Corner exit, exit-critical (`analysis/segments.ts`) | _Going Faster!_; Bentley; Driver61 (exit priority) |
+| Scrubbing, unused grip (`analysis/grip.ts`) | Friction circle / g-g; Carroll Smith; lap-time-optimization literature |
+| Stage-0 data-quality confidence (`analysis/quality.ts`) | GNSS HDOP/satellite guidance; telemetry vendors (logging rate) |
 | Lap-time consistency (`analysis/debrief.ts`) | Bentley; driver-authored philosophy (Stewart, Lauda) |
 | Theoretical best (`analysis/debrief.ts`) | MoTeC i2; AiM RaceStudio |
 | Delta-time trace (`analysis/report.ts`, dashboard) | MoTeC i2 ("Variance") |
