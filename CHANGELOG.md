@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-05-26
+
 ### Added
 
 - Structured per-corner **insight records** (`analysis/coaching.ts`) — the
@@ -35,6 +37,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   satellites) and logging rate, and **caps insight confidence** accordingly
   (poor → low, fair → medium). Exposed as `report.quality` and shown in the
   dashboard footer.
+- The track map now **colours each corner by its attributed cause** (low minimum
+  speed / scrubbing / unused grip / inconsistent apex / execution), with the
+  V-Min dot and numbered badge sharing the colour and **low-confidence/advisory
+  reads drawn dashed**. The corner window is clickable (popup names the cause,
+  confidence, and time lost), and a colour legend sits above the map.
+- An "Experimental analysis · beta" badge in the Coach panel header.
 
 ## [0.2.4] - 2026-05-25
 
