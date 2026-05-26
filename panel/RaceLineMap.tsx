@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import type { Course, GpsSample, Lap } from "@/types/racing";
 import type { Corner } from "../analysis/corners";
 import type { ApexOffset, CornerExit } from "../analysis/segments";
+import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
 import { lapTrack, positionAtDistance } from "../analysis/distance";
 
 // Offline-first race-line map. Draws the reference lap straight from GPS samples
@@ -15,12 +16,45 @@ const MPS_TO_KPH = 3.6;
 const MPS_TO_MPH = 2.2369362920544;
 
 const BASE_LINE = "#6b7280";
-const CORNER_LINE = "#f59e0b";
-const VMIN_COLOR = "#ef4444";
 const GEO_COLOR = "#22d3ee";
 const OFFSET_COLOR = "#a78bfa";
 const EXIT_COLOR = "#22c55e";
 const EXIT_DULL = "#94a3b8";
+
+// Per-cause palette for colouring corners by what the attribution found.
+export const CAUSE_COLOR: Record<CornerRootCause, string> = {
+  low_min_speed: "#ef4444",
+  scrubbing: "#f97316",
+  unused_grip: "#eab308",
+  inconsistent_apex: "#ec4899",
+  corner_execution: "#94a3b8",
+  none: "#64748b",
+};
+export const CAUSE_LABEL: Record<CornerRootCause, string> = {
+  low_min_speed: "low minimum speed",
+  scrubbing: "scrubbing",
+  unused_grip: "unused grip",
+  inconsistent_apex: "inconsistent apex",
+  corner_execution: "execution (line/braking)",
+  none: "on pace",
+};
+const NEUTRAL_CORNER = "#64748b";
+
+interface CornerStyle {
+  color: string;
+  weight: number;
+  opacity: number;
+  dashArray?: string;
+}
+
+/** Corner-window style by attributed cause + confidence (low confidence -> dashed/advisory). */
+function cornerStyle(insight: CornerInsight | undefined): CornerStyle {
+  if (!insight) return { color: NEUTRAL_CORNER, weight: 4, opacity: 0.7 };
+  const color = CAUSE_COLOR[insight.rootCause];
+  if (insight.confidence === "low") return { color, weight: 5, opacity: 0.6, dashArray: "5 6" };
+  if (insight.confidence === "medium") return { color, weight: 5, opacity: 0.85 };
+  return { color, weight: 6, opacity: 0.95 };
+}
 
 // Host basemaps, used verbatim so the coach map matches the app (see brief).
 const TILES = {
@@ -43,21 +77,22 @@ export interface RaceLineMapProps {
   corners: Corner[];
   apex: ApexOffset[];
   exits: CornerExit[];
+  insights: CornerInsight[];
   course: Course | null;
   useKph: boolean;
   height: number;
 }
 
-function numberIcon(label: string): L.DivIcon {
+function numberIcon(label: string, color: string): L.DivIcon {
   return L.divIcon({
     className: "",
     iconSize: [22, 22],
     iconAnchor: [11, 11],
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${CORNER_LINE};color:#111;font-size:12px;font-weight:700;box-shadow:0 0 0 2px rgba(0,0,0,0.4)">${label}</div>`,
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${color};color:#111;font-size:12px;font-weight:700;box-shadow:0 0 0 2px rgba(0,0,0,0.4)">${label}</div>`,
   });
 }
 
-export function RaceLineMap({ samples, lap, corners, apex, exits, course, useKph, height }: RaceLineMapProps) {
+export function RaceLineMap({ samples, lap, corners, apex, exits, insights, course, useKph, height }: RaceLineMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -98,34 +133,48 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, course, useKph
 
     const apexByCorner = new Map(apex.map((a) => [a.cornerIndex, a]));
     const exitByCorner = new Map(exits.map((e) => [e.cornerIndex, e]));
+    const insightByCorner = new Map(insights.map((i) => [i.cornerIndex, i]));
     const fmtSpeed = (mps: number) =>
       useKph ? `${(mps * MPS_TO_KPH).toFixed(1)} km/h` : `${(mps * MPS_TO_MPH).toFixed(1)} mph`;
 
     for (const corner of corners) {
-      const segment = latlngs.filter(
-        (_, i) => track.distances[i] >= corner.startDist && track.distances[i] <= corner.endDist,
-      );
-      if (segment.length >= 2) {
-        L.polyline(segment, { color: CORNER_LINE, weight: 5, opacity: 0.85 }).addTo(group);
-      }
-
       const a = apexByCorner.get(corner.index);
       const exit = exitByCorner.get(corner.index);
+      const insight = insightByCorner.get(corner.index);
+      const style = cornerStyle(insight);
       const vMin = positionAtDistance(track, corner.apexDist);
 
-      let apexLine = `Corner ${corner.index + 1}`;
+      let header = `Corner ${corner.index + 1}`;
       if (a) {
-        apexLine +=
+        header +=
           a.kind === "on"
             ? " · on the apex"
             : ` · ${a.kind} apex ${a.offsetM > 0 ? "+" : "-"}${Math.abs(Math.round(a.offsetM))} m`;
+      }
+      let causeLine = "";
+      if (insight) {
+        causeLine = `<br/><span style="color:${style.color}">&#9656; ${CAUSE_LABEL[insight.rootCause]}</span> (${insight.confidence} confidence, +${(insight.timeLostMs / 1000).toFixed(2)}s)`;
       }
       let exitLine = "";
       if (exit) {
         exitLine = `<br/>Exit ${fmtSpeed(exit.exitSpeedMps)}`;
         if (exit.exitCritical) exitLine += ` &rarr; straight ${Math.round(exit.followingStraightM)} m`;
       }
-      const popup = `<strong>${apexLine}</strong><br/>V-Min ${fmtSpeed(corner.minSpeedMps)}${exitLine}`;
+      const popup = `<strong>${header}</strong>${causeLine}<br/>V-Min ${fmtSpeed(corner.minSpeedMps)}${exitLine}`;
+
+      const segment = latlngs.filter(
+        (_, i) => track.distances[i] >= corner.startDist && track.distances[i] <= corner.endDist,
+      );
+      if (segment.length >= 2) {
+        L.polyline(segment, {
+          color: style.color,
+          weight: style.weight,
+          opacity: style.opacity,
+          dashArray: style.dashArray,
+        })
+          .bindPopup(popup)
+          .addTo(group);
+      }
 
       // Connector from V-Min to the geometric apex when the latter is well-defined.
       if (a?.confident) {
@@ -150,15 +199,15 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, course, useKph
 
       L.circleMarker([vMin.lat, vMin.lon], {
         radius: 5,
-        color: VMIN_COLOR,
+        color: style.color,
         weight: 2,
-        fillColor: VMIN_COLOR,
+        fillColor: style.color,
         fillOpacity: 0.9,
       })
         .bindPopup(popup)
         .addTo(group);
 
-      L.marker([vMin.lat, vMin.lon], { icon: numberIcon(String(corner.index + 1)) })
+      L.marker([vMin.lat, vMin.lon], { icon: numberIcon(String(corner.index + 1), style.color) })
         .bindPopup(popup)
         .addTo(group);
 

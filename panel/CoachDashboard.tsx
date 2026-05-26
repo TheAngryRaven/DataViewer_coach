@@ -6,7 +6,11 @@ import type { CornerMethod } from "../analysis/corners";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { describeCornerInsight } from "../analysis/coaching";
 import { UplotChart } from "./UplotChart";
-import { RaceLineMap } from "./RaceLineMap";
+import { RaceLineMap, CAUSE_COLOR, CAUSE_LABEL } from "./RaceLineMap";
+
+const CAUSE_LEGEND = (
+  ["low_min_speed", "scrubbing", "unused_grip", "inconsistent_apex", "corner_execution"] as const
+).map((cause) => ({ color: CAUSE_COLOR[cause], label: CAUSE_LABEL[cause] }));
 
 // Full-bleed (chromeless) Stage-1 dashboard for the Coach tab. A thin view over
 // the pure `buildCoachingReport` analysis; no model, no network. Default-exported
@@ -153,17 +157,26 @@ export default function CoachDashboard(props: PluginPanelProps) {
       {data !== null && bestLap !== null && (
         <Section title={`Track map — corners & apex (best lap ${bestLap.lapNumber})`}>
           <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
-            Amber = detected corner window · red dot = V-Min (slowest point) · cyan
-            ring = geometric apex (curvature peak) · dashed line = apex offset ·
-            green dot = corner exit onto a straight (grey = no straight follows).
-            Click any marker; toggle a satellite background top-right.
+            Corners are coloured by attributed cause (dashed = low-confidence /
+            advisory). Cyan ring = geometric apex · dashed purple = apex offset ·
+            green dot = exit onto a straight (grey = none). Click any marker;
+            toggle a satellite background top-right.
           </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {CAUSE_LEGEND.map((entry) => (
+              <span key={entry.label} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12 }}>
+                <span style={{ width: 12, height: 4, borderRadius: 2, background: entry.color }} />
+                <span className="text-muted-foreground">{entry.label}</span>
+              </span>
+            ))}
+          </div>
           <RaceLineMap
             samples={data.samples}
             lap={bestLap}
             corners={report.corners}
             apex={report.apex}
             exits={report.exits}
+            insights={report.insights}
             course={course}
             useKph={useKph}
             height={420}

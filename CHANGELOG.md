@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The track map now **colours each corner by its attributed cause** (low minimum
+  speed / scrubbing / unused grip / inconsistent apex / execution), with the
+  V-Min dot and numbered badge sharing the colour and **low-confidence/advisory
+  reads drawn dashed**. The corner window is clickable (popup names the cause,
+  confidence, and time lost). A colour legend sits above the map. Makes the
+  attribution spatial — where on track each problem is — at a glance.
+
+### Added
+
 - Structured per-corner **insight records** (`analysis/coaching.ts`) — the
   Stage-1 → Stage-2 contract (addon2 §B.2, addon1 §A.7). `buildCornerInsights`
   attributes each corner's time loss to a `rootCause` (`low_min_speed` /
