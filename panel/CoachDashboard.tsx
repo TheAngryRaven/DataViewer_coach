@@ -88,6 +88,7 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 16, height: "100%", overflowY: "auto" }}>
+      <BetaBadge />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Summary report={report} useKph={useKph} />
         <MethodToggle method={cornerMethod} onChange={setCornerMethod} cornerCount={report.corners.length} />
@@ -296,6 +297,29 @@ function MethodToggle({
       </div>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
         {cornerCount} corner{cornerCount === 1 ? "" : "s"} detected
+      </span>
+    </div>
+  );
+}
+
+function BetaBadge() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          padding: "3px 10px",
+          borderRadius: 999,
+          background: "rgba(234,179,8,0.16)",
+          color: "#eab308",
+          border: "1px solid rgba(234,179,8,0.4)",
+        }}
+      >
+        Experimental analysis · beta
+      </span>
+      <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+        deterministic, on-device — figures may shift as the analysis is tuned
       </span>
     </div>
   );
