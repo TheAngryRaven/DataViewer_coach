@@ -3,7 +3,7 @@ import { fastestLap } from "./insights";
 import { buildSession } from "./session";
 import { buildDebrief, type SessionDebrief } from "./debrief";
 import { detectCapabilities, type SessionCapabilities } from "./channels";
-import { sampleRateHz } from "./signal";
+import { longitudinalAccel, sampleRateHz } from "./signal";
 import {
   buildComparableProfiles,
   deltaTimeMs,
@@ -18,6 +18,14 @@ import {
   type CornerMethod,
 } from "./corners";
 import { curvatureForLap } from "./curvature";
+import {
+  cornerGrip,
+  combinedAccelMps2,
+  gripEnvelopeMps2,
+  lateralAccelMps2,
+  type CornerGrip,
+} from "./grip";
+import { assessQuality, type DataQuality } from "./quality";
 import {
   apexOffsets,
   brakingPoints,
@@ -70,6 +78,10 @@ export interface CoachingReport {
   apex: ApexOffset[];
   /** Lap-to-lap V-Min variance per corner (the consistency layer). */
   consistency: CornerConsistency[];
+  /** GPS-derived friction-circle read per corner (scrubbing / unused grip); advisory. */
+  grip: CornerGrip[];
+  /** Stage-0 GPS data quality, and the confidence cap it implies. */
+  quality: DataQuality;
   /** Exit speed + whether a straight follows (exit priority), per corner. */
   exits: CornerExit[];
   braking: BrakingPoint[];
@@ -127,6 +139,8 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     insights: [],
     apex: [],
     consistency: [],
+    grip: [],
+    quality: { sampleRateHz: 0, hdop: null, satellites: null, level: "poor", confidenceCap: "low" },
     exits: [],
     braking: [],
     throttle: [],
@@ -159,6 +173,17 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   // V-Min variance uses every lap on the shared grid, not just subject vs best.
   const consistency = cornerConsistency(profiles, corners);
 
+  // Friction circle on the lap under inspection (GPS-derived lateral g = v^2*kappa).
+  const inspectLap = laps.find((lap) => lap.lapNumber === inspect.lapNumber);
+  const inspectCurvature = inspectLap ? curvatureForLap(data.samples, inspectLap, grid) : curvature;
+  const latAccel = lateralAccelMps2(inspect.speedMps, inspectCurvature);
+  const longAccel = longitudinalAccel(inspect.speedMps, inspect.elapsedMs);
+  const envelope = gripEnvelopeMps2(combinedAccelMps2(latAccel, longAccel));
+  const grip = cornerGrip(corners, grid, inspect.speedMps, latAccel, longAccel, envelope);
+
+  // Stage-0 quality caps how confident any insight can be.
+  const quality = assessQuality(data, sampleRateHz(data.samples));
+
   return {
     ...empty,
     sampleRateHz: sampleRateHz(data.samples),
@@ -174,9 +199,13 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners,
     cornerDeltas,
     topTimeLoss: rankByTimeLost(cornerDeltas, TIME_LOSS_LIMIT),
-    insights: comparing ? buildCornerInsights(cornerDeltas, exits, apex, consistency) : [],
+    insights: comparing
+      ? buildCornerInsights(cornerDeltas, exits, apex, consistency, grip, quality.confidenceCap)
+      : [],
     apex,
     consistency,
+    grip,
+    quality,
     exits,
     braking: brakingPoints(inspect, corners),
     throttle: capabilities.throttle ? throttleApplication(inspect, corners) : [],

@@ -95,7 +95,11 @@ describe("buildCoachingReport", () => {
     expect(typeof report.exits[0].exitCritical).toBe("boolean");
     // Subject lap is slower, so at least one attributed insight should surface.
     expect(report.insights.length).toBeGreaterThanOrEqual(1);
-    expect(["low_min_speed", "corner_execution"]).toContain(report.insights[0].rootCause);
+    expect(["inconsistent_apex", "scrubbing", "unused_grip", "low_min_speed", "corner_execution"]).toContain(
+      report.insights[0].rootCause,
+    );
+    expect(report.grip).toHaveLength(report.corners.length);
+    expect(["good", "fair", "poor"]).toContain(report.quality.level);
     // Subject lap is slower overall, so it should show net time lost somewhere.
     expect(report.deltaMs[report.deltaMs.length - 1]).toBeGreaterThan(0);
     expect(report.sectorDeltas).toHaveLength(3);

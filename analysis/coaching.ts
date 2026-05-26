@@ -1,5 +1,6 @@
 import { formatSpeed } from "./insights";
 import type { ApexOffset, CornerConsistency, CornerDelta, CornerExit } from "./segments";
+import type { CornerGrip } from "./grip";
 
 // The Stage-1 -> Stage-2 boundary (ARCHITECTURE addon2 §B.2, addon1 §A.7).
 //
@@ -9,21 +10,21 @@ import type { ApexOffset, CornerConsistency, CornerDelta, CornerExit } from "./s
 // these records, it NEVER invents a number that isn't in `evidence`.
 //
 // Keep the record pure and unit-agnostic (no prose, no display units). Phrasing
-// lives in `describeCornerInsight` so the free tier and an AI tier can both sit
-// on top of the same structured record.
+// lives in `describeCornerInsight`.
 
 /**
- * Why a corner lost time. A deliberately small, honest set for now; the richer
- * causes in addon1 §A.7 (scrubbing, unused_grip, inconsistent_apex) need a
- * friction circle / cross-lap variance we don't compute yet.
+ * Why a corner lost time. `scrubbing`/`unused_grip` come from the GPS-derived
+ * friction circle and are advisory (addon1 §A.4 layer 1, §A.6).
  */
 export type CornerRootCause =
   | "inconsistent_apex" // minimum corner speed swings lap-to-lap — repeat it before chasing pace
-  | "low_min_speed" // carried less speed through the slow point
+  | "scrubbing" // sliding through the slow point — speed washed off under lateral load
+  | "unused_grip" // under the grip limit at the apex — room to carry more speed
+  | "low_min_speed" // carried less speed through the slow point (cause otherwise unresolved)
   | "corner_execution" // time lost but apex speed matched — entry/line/exit, unresolved at this fidelity
   | "none"; // within noise
 
-/** Coarse, honest confidence. Driven by attribution clarity today; GPS/data quality (Stage 0) folds in later. */
+/** Coarse, honest confidence. Capped by Stage-0 data quality; grip causes stay advisory. */
 export type InsightConfidence = "high" | "medium" | "low";
 
 export interface CornerInsight {
@@ -43,6 +44,8 @@ export interface CornerInsight {
     apexOffsetM: number | null;
     /** Lap-to-lap V-Min stdev (m/s), or null with fewer than two laps. */
     vMinStdevMps: number | null;
+    /** Grip used at the apex (combined / demonstrated envelope), or null when no grip read. */
+    envelopeUtil: number | null;
   };
 }
 
@@ -61,29 +64,43 @@ export const DEFAULT_INSIGHT_THRESHOLDS: InsightThresholds = {
   inconsistentVminStdevMps: 0.7,
 };
 
+/** Everything known about one corner, joined from the various analyses. */
+export interface CornerContext {
+  delta: CornerDelta;
+  exit?: CornerExit;
+  apex?: ApexOffset;
+  consistency?: CornerConsistency;
+  grip?: CornerGrip;
+}
+
+const CONFIDENCE_RANK: Record<InsightConfidence, number> = { low: 0, medium: 1, high: 2 };
+
+function capConfidence(value: InsightConfidence, cap: InsightConfidence): InsightConfidence {
+  return CONFIDENCE_RANK[value] <= CONFIDENCE_RANK[cap] ? value : cap;
+}
+
 /**
  * Attribute a single corner's time loss to a root cause with a confidence.
- * Arbitration is single-cause but ordered:
- *   1. high lap-to-lap V-Min variance -> `inconsistent_apex`. Consistency is the
- *      prerequisite to pace (REFERENCES.md: Speed Secrets, and the driver-authored
- *      smoothness canon), so when a corner genuinely swings, that's the message
- *      even if this lap was also slow.
- *   2. a clear apex-speed deficit -> `low_min_speed` (firm on exit-critical
- *      corners, where it compounds down the straight — momentum / exit priority).
- *   3. time lost with apex speed matching the reference -> `corner_execution`,
- *      stated honestly at low confidence rather than guessed.
+ * Single-cause but ordered:
+ *   1. high lap-to-lap V-Min variance -> `inconsistent_apex` (consistency is the
+ *      prerequisite to pace — REFERENCES.md).
+ *   2. an apex-speed deficit, refined by the friction circle -> `scrubbing`
+ *      (sliding), `unused_grip` (room to push), else `low_min_speed`.
+ *   3. time lost with apex speed matching the reference -> `corner_execution`.
+ * `confidenceCap` (Stage-0 data quality) limits the result; grip causes are
+ * advisory and never exceed "low".
  */
 export function cornerInsight(
-  delta: CornerDelta,
-  exit: CornerExit | undefined,
-  apex: ApexOffset | undefined,
-  consistency: CornerConsistency | undefined,
+  context: CornerContext,
   thresholds: InsightThresholds = DEFAULT_INSIGHT_THRESHOLDS,
+  confidenceCap: InsightConfidence = "high",
 ): CornerInsight {
+  const { delta, exit, apex, consistency, grip } = context;
   const minSpeedGapMps = delta.referenceMinSpeedMps - delta.subjectMinSpeedMps;
   const exitCritical = exit?.exitCritical ?? false;
   const apexOffsetM = apex?.confident ? apex.offsetM : null;
   const vMinStdevMps = consistency && consistency.sampleSize >= 2 ? consistency.vMinStdevMps : null;
+  const envelopeUtil = grip ? grip.envelopeUtil : null;
 
   let rootCause: CornerRootCause;
   let confidence: InsightConfidence;
@@ -92,11 +109,18 @@ export function cornerInsight(
     confidence = "high";
   } else if (vMinStdevMps !== null && vMinStdevMps >= thresholds.inconsistentVminStdevMps) {
     rootCause = "inconsistent_apex";
-    // More laps -> a more trustworthy variance read.
     confidence = (consistency?.sampleSize ?? 0) >= 4 ? "high" : "medium";
   } else if (minSpeedGapMps >= thresholds.minSpeedGapMps) {
-    rootCause = "low_min_speed";
-    confidence = exitCritical ? "high" : "medium";
+    if (grip?.scrubbing) {
+      rootCause = "scrubbing";
+      confidence = "low"; // GPS-derived friction circle — advisory
+    } else if (grip?.unusedGrip) {
+      rootCause = "unused_grip";
+      confidence = "low"; // GPS-derived friction circle — advisory
+    } else {
+      rootCause = "low_min_speed";
+      confidence = exitCritical ? "high" : "medium";
+    }
   } else {
     rootCause = "corner_execution";
     confidence = "low";
@@ -107,34 +131,41 @@ export function cornerInsight(
     apexDist: delta.apexDist,
     timeLostMs: delta.timeLostMs,
     rootCause,
-    confidence,
-    evidence: { minSpeedGapMps, exitCritical, apexOffsetM, vMinStdevMps },
+    confidence: capConfidence(confidence, confidenceCap),
+    evidence: { minSpeedGapMps, exitCritical, apexOffsetM, vMinStdevMps, envelopeUtil },
   };
 }
 
 /**
  * Build attributed insights for every compared corner, ranked by time lost,
- * dropping the on-pace ones. Joins the per-corner deltas with exit and apex
- * context by corner index.
+ * dropping the on-pace ones. Joins per-corner delta/exit/apex/consistency/grip
+ * by corner index; `confidenceCap` comes from Stage-0 data quality.
  */
 export function buildCornerInsights(
   deltas: CornerDelta[],
   exits: CornerExit[],
   apex: ApexOffset[],
   consistency: CornerConsistency[],
+  grip: CornerGrip[],
+  confidenceCap: InsightConfidence = "high",
   thresholds: InsightThresholds = DEFAULT_INSIGHT_THRESHOLDS,
 ): CornerInsight[] {
   const exitByCorner = new Map(exits.map((e) => [e.cornerIndex, e]));
   const apexByCorner = new Map(apex.map((a) => [a.cornerIndex, a]));
   const consistencyByCorner = new Map(consistency.map((c) => [c.cornerIndex, c]));
+  const gripByCorner = new Map(grip.map((g) => [g.cornerIndex, g]));
   return deltas
     .map((delta) =>
       cornerInsight(
-        delta,
-        exitByCorner.get(delta.cornerIndex),
-        apexByCorner.get(delta.cornerIndex),
-        consistencyByCorner.get(delta.cornerIndex),
+        {
+          delta,
+          exit: exitByCorner.get(delta.cornerIndex),
+          apex: apexByCorner.get(delta.cornerIndex),
+          consistency: consistencyByCorner.get(delta.cornerIndex),
+          grip: gripByCorner.get(delta.cornerIndex),
+        },
         thresholds,
+        confidenceCap,
       ),
     )
     .filter((insight) => insight.rootCause !== "none")
@@ -166,6 +197,10 @@ export function describeCornerInsight(insight: CornerInsight, useKph: boolean): 
       );
       return `Corner ${corner}: losing ~${secs}s — your minimum speed here swings about ${swing} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.`;
     }
+    case "scrubbing":
+      return `Corner ${corner}: losing ~${secs}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex. [GPS-derived, advisory]`;
+    case "unused_grip":
+      return `Corner ${corner}: losing ~${secs}s — apex looks under the grip limit (~${Math.round((insight.evidence.envelopeUtil ?? 0) * 100)}% of demonstrated), so there's room to carry more speed. [GPS-derived, advisory]`;
     case "low_min_speed":
       return insight.evidence.exitCritical
         ? `Corner ${corner}: losing ~${secs}s — about ${gap} less at the apex onto a straight, so it compounds down the following straight.`

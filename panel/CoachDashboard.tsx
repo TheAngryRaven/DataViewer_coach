@@ -218,22 +218,27 @@ function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }
 }
 
 function DataQuality({ report }: { report: CoachingReport }) {
-  const { capabilities, sampleRateHz } = report;
-  const gNote = capabilities.measuredG
-    ? "measured g"
-    : capabilities.hasG
-      ? "GPS-derived g (advisory)"
-      : "no g channel";
-  const extras = [
+  const { capabilities, quality } = report;
+  const parts = [
+    quality.sampleRateHz > 0 ? `${Math.round(quality.sampleRateHz)} Hz` : "rate n/a",
+    `GPS ${quality.level}`,
+    quality.hdop !== null ? `HDOP ${quality.hdop.toFixed(1)}` : null,
+    quality.satellites !== null ? `${Math.round(quality.satellites)} sats` : null,
+    capabilities.measuredG ? "measured g" : "GPS-derived g",
     capabilities.throttle ? "throttle" : null,
     capabilities.brake ? "brake" : null,
     capabilities.rpm ? "rpm" : null,
   ].filter((x): x is string => x !== null);
   return (
-    <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: "auto", paddingTop: 8 }}>
-      {sampleRateHz > 0 ? `${Math.round(sampleRateHz)} Hz` : "rate n/a"} · {gNote}
-      {extras.length > 0 ? ` · ${extras.join(", ")}` : ""}
-    </p>
+    <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: "auto", paddingTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+      <span>{parts.join(" · ")}</span>
+      <span>
+        Scrubbing / unused-grip reads are GPS-derived (lateral g ≈ v²·κ) and
+        advisory; confidence is capped by GPS quality. A chassis-mounted
+        accelerometer would sharpen them — many kart loggers mount the sensor on
+        the steering, which isn't ideal for this.
+      </span>
+    </div>
   );
 }
 
