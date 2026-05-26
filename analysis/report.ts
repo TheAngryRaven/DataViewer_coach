@@ -21,6 +21,7 @@ import { curvatureForLap } from "./curvature";
 import {
   apexOffsets,
   brakingPoints,
+  cornerConsistency,
   cornerExits,
   cornerTimeLoss,
   rankByTimeLost,
@@ -28,6 +29,7 @@ import {
   throttleApplication,
   type ApexOffset,
   type BrakingPoint,
+  type CornerConsistency,
   type CornerDelta,
   type CornerExit,
   type SectorDelta,
@@ -66,6 +68,8 @@ export interface CoachingReport {
   insights: CornerInsight[];
   /** V-Min vs geometric apex per corner (early/late/on); diagnostic. */
   apex: ApexOffset[];
+  /** Lap-to-lap V-Min variance per corner (the consistency layer). */
+  consistency: CornerConsistency[];
   /** Exit speed + whether a straight follows (exit priority), per corner. */
   exits: CornerExit[];
   braking: BrakingPoint[];
@@ -122,6 +126,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     topTimeLoss: [],
     insights: [],
     apex: [],
+    consistency: [],
     exits: [],
     braking: [],
     throttle: [],
@@ -151,6 +156,8 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   const inspect = subjectProfile ?? referenceProfile;
   const apex = apexOffsets(corners, grid, referenceProfile.speedMps, curvature);
   const exits = cornerExits(grid, referenceProfile.speedMps, corners);
+  // V-Min variance uses every lap on the shared grid, not just subject vs best.
+  const consistency = cornerConsistency(profiles, corners);
 
   return {
     ...empty,
@@ -167,8 +174,9 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     corners,
     cornerDeltas,
     topTimeLoss: rankByTimeLost(cornerDeltas, TIME_LOSS_LIMIT),
-    insights: comparing ? buildCornerInsights(cornerDeltas, exits, apex) : [],
+    insights: comparing ? buildCornerInsights(cornerDeltas, exits, apex, consistency) : [],
     apex,
+    consistency,
     exits,
     braking: brakingPoints(inspect, corners),
     throttle: capabilities.throttle ? throttleApplication(inspect, corners) : [],

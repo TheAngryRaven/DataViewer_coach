@@ -1,5 +1,5 @@
 import { formatSpeed } from "./insights";
-import type { ApexOffset, CornerDelta, CornerExit } from "./segments";
+import type { ApexOffset, CornerConsistency, CornerDelta, CornerExit } from "./segments";
 
 // The Stage-1 -> Stage-2 boundary (ARCHITECTURE addon2 §B.2, addon1 §A.7).
 //
@@ -18,6 +18,7 @@ import type { ApexOffset, CornerDelta, CornerExit } from "./segments";
  * friction circle / cross-lap variance we don't compute yet.
  */
 export type CornerRootCause =
+  | "inconsistent_apex" // minimum corner speed swings lap-to-lap — repeat it before chasing pace
   | "low_min_speed" // carried less speed through the slow point
   | "corner_execution" // time lost but apex speed matched — entry/line/exit, unresolved at this fidelity
   | "none"; // within noise
@@ -40,6 +41,8 @@ export interface CornerInsight {
     exitCritical: boolean;
     /** V-Min vs geometric apex offset (m), or null when the geometric apex is ill-defined. */
     apexOffsetM: number | null;
+    /** Lap-to-lap V-Min stdev (m/s), or null with fewer than two laps. */
+    vMinStdevMps: number | null;
   };
 }
 
@@ -48,39 +51,51 @@ export interface InsightThresholds {
   minTimeLostMs: number;
   /** Apex-speed deficit (m/s) that counts as "carrying less speed". Provisional heuristic — tune. */
   minSpeedGapMps: number;
+  /** Lap-to-lap V-Min stdev (m/s) above which a corner reads as inconsistent. Provisional heuristic — tune. */
+  inconsistentVminStdevMps: number;
 }
 
 export const DEFAULT_INSIGHT_THRESHOLDS: InsightThresholds = {
   minTimeLostMs: 50,
   minSpeedGapMps: 0.3,
+  inconsistentVminStdevMps: 0.7,
 };
 
 /**
  * Attribute a single corner's time loss to a root cause with a confidence.
- * First pass, strongest on **exit-critical** corners: there, a minimum-speed
- * deficit is the dominant, well-grounded cause because it compounds down the
- * following straight (momentum / exit priority — see REFERENCES.md: Speed
- * Secrets, Going Faster!). When apex speed matches the reference yet time is
- * still lost, we say so honestly at low confidence rather than guess.
+ * Arbitration is single-cause but ordered:
+ *   1. high lap-to-lap V-Min variance -> `inconsistent_apex`. Consistency is the
+ *      prerequisite to pace (REFERENCES.md: Speed Secrets, and the driver-authored
+ *      smoothness canon), so when a corner genuinely swings, that's the message
+ *      even if this lap was also slow.
+ *   2. a clear apex-speed deficit -> `low_min_speed` (firm on exit-critical
+ *      corners, where it compounds down the straight — momentum / exit priority).
+ *   3. time lost with apex speed matching the reference -> `corner_execution`,
+ *      stated honestly at low confidence rather than guessed.
  */
 export function cornerInsight(
   delta: CornerDelta,
   exit: CornerExit | undefined,
   apex: ApexOffset | undefined,
+  consistency: CornerConsistency | undefined,
   thresholds: InsightThresholds = DEFAULT_INSIGHT_THRESHOLDS,
 ): CornerInsight {
   const minSpeedGapMps = delta.referenceMinSpeedMps - delta.subjectMinSpeedMps;
   const exitCritical = exit?.exitCritical ?? false;
   const apexOffsetM = apex?.confident ? apex.offsetM : null;
+  const vMinStdevMps = consistency && consistency.sampleSize >= 2 ? consistency.vMinStdevMps : null;
 
   let rootCause: CornerRootCause;
   let confidence: InsightConfidence;
   if (delta.timeLostMs < thresholds.minTimeLostMs) {
     rootCause = "none";
     confidence = "high";
+  } else if (vMinStdevMps !== null && vMinStdevMps >= thresholds.inconsistentVminStdevMps) {
+    rootCause = "inconsistent_apex";
+    // More laps -> a more trustworthy variance read.
+    confidence = (consistency?.sampleSize ?? 0) >= 4 ? "high" : "medium";
   } else if (minSpeedGapMps >= thresholds.minSpeedGapMps) {
     rootCause = "low_min_speed";
-    // On a corner onto a straight the deficit clearly compounds -> firm. Elsewhere, softer.
     confidence = exitCritical ? "high" : "medium";
   } else {
     rootCause = "corner_execution";
@@ -93,7 +108,7 @@ export function cornerInsight(
     timeLostMs: delta.timeLostMs,
     rootCause,
     confidence,
-    evidence: { minSpeedGapMps, exitCritical, apexOffsetM },
+    evidence: { minSpeedGapMps, exitCritical, apexOffsetM, vMinStdevMps },
   };
 }
 
@@ -106,13 +121,21 @@ export function buildCornerInsights(
   deltas: CornerDelta[],
   exits: CornerExit[],
   apex: ApexOffset[],
+  consistency: CornerConsistency[],
   thresholds: InsightThresholds = DEFAULT_INSIGHT_THRESHOLDS,
 ): CornerInsight[] {
   const exitByCorner = new Map(exits.map((e) => [e.cornerIndex, e]));
   const apexByCorner = new Map(apex.map((a) => [a.cornerIndex, a]));
+  const consistencyByCorner = new Map(consistency.map((c) => [c.cornerIndex, c]));
   return deltas
     .map((delta) =>
-      cornerInsight(delta, exitByCorner.get(delta.cornerIndex), apexByCorner.get(delta.cornerIndex), thresholds),
+      cornerInsight(
+        delta,
+        exitByCorner.get(delta.cornerIndex),
+        apexByCorner.get(delta.cornerIndex),
+        consistencyByCorner.get(delta.cornerIndex),
+        thresholds,
+      ),
     )
     .filter((insight) => insight.rootCause !== "none")
     .sort((a, b) => b.timeLostMs - a.timeLostMs);
@@ -135,6 +158,14 @@ export function describeCornerInsight(insight: CornerInsight, useKph: boolean): 
     useKph,
   );
   switch (insight.rootCause) {
+    case "inconsistent_apex": {
+      const swing = formatSpeed(
+        (insight.evidence.vMinStdevMps ?? 0) * MPS_TO_MPH,
+        (insight.evidence.vMinStdevMps ?? 0) * MPS_TO_KPH,
+        useKph,
+      );
+      return `Corner ${corner}: losing ~${secs}s — your minimum speed here swings about ${swing} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.`;
+    }
     case "low_min_speed":
       return insight.evidence.exitCritical
         ? `Corner ${corner}: losing ~${secs}s — about ${gap} less at the apex onto a straight, so it compounds down the following straight.`

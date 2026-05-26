@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   phrasing, kept separate from the record so an AI tier can reason over the same
   structured contract and only rephrase/prioritize — never invent a number.
   Surfaced in the dashboard's "Where you're losing time (attributed)" section.
+- Widened the cause set with **`inconsistent_apex`** plus the consistency layer
+  behind it: `cornerConsistency` (lap-to-lap V-Min stdev/spread per corner, over
+  every lap on the shared grid; addon1 §A.4 layer 2 — reference-free). Attribution
+  is now single-cause but ordered — high V-Min variance takes priority over a
+  single-lap min-speed deficit, because consistency is the prerequisite to pace.
+  Exposed as `report.consistency`.
 
 ## [0.2.4] - 2026-05-25
 
