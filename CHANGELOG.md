@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Expanded the README with a detailed **"What it does today"** walkthrough of the
+  Stage-1 analysis pipeline — the distance domain, corner detection, the apex
+  calculations (V-Min vs geometric/curvature apex, the signed apex offset and its
+  confidence flag), the per-corner reads, attributed insights, and data-quality
+  gating — so the documented behaviour matches what the plugin actually computes.
+
 ## [0.2.5] - 2026-05-26
 
 ### Added
