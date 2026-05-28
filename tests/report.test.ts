@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { FieldMapping, GpsSample, Lap, ParsedData } from "@/types/racing";
-import { buildCoachingReport, GRID_POINTS, type ReportInput } from "../analysis/report";
+import type { PluginSnapshot } from "@/plugins/panels";
+import type { VehicleSetup } from "@/plugins/setup";
+import {
+  buildCoachingReport,
+  GRID_POINTS,
+  SNAPSHOT_LAP_NUMBER,
+  type ReportInput,
+} from "../analysis/report";
 import { gpsSample } from "./fixtures";
 
 // A V-shaped speed trace: one clear corner per lap (apex at the middle sample).
@@ -149,5 +156,122 @@ describe("buildCoachingReport", () => {
     expect(report.corners.length).toBeGreaterThanOrEqual(1);
     expect(report.cornerDeltas).toEqual([]);
     expect(report.braking).toHaveLength(report.corners.length);
+  });
+
+  it("defaults referenceSource to best-lap when no snapshot is loaded", () => {
+    const report = buildCoachingReport(input());
+    expect(report.referenceSource).toBe("best-lap");
+    expect(report.snapshotReference).toBeNull();
+    expect(report.baselineDeltaMs).toBeNull();
+    expect(report.setupChanges).toEqual([]);
+  });
+});
+
+function setup(overrides: Partial<VehicleSetup> = {}): VehicleSetup {
+  return {
+    id: "s",
+    vehicleId: "k",
+    templateId: "tag",
+    name: "n",
+    unitSystem: "mm",
+    tireBrand: "MG",
+    psiMode: "halves",
+    psiFrontLeft: 12,
+    psiFrontRight: 12,
+    psiRearLeft: 11,
+    psiRearRight: 11,
+    tireWidthMode: "halves",
+    tireWidthFrontLeft: null,
+    tireWidthFrontRight: null,
+    tireWidthRearLeft: null,
+    tireWidthRearRight: null,
+    tireDiameterMode: "halves",
+    tireDiameterFrontLeft: null,
+    tireDiameterFrontRight: null,
+    tireDiameterRearLeft: null,
+    tireDiameterRearRight: null,
+    customFields: {},
+    createdAt: 0,
+    updatedAt: 0,
+    ...overrides,
+  };
+}
+
+function snapshot(overrides: Partial<PluginSnapshot> = {}): PluginSnapshot {
+  // Reuse the lap-2 sample slice as a snapshot baseline (a clean lap from
+  // another session, by contract).
+  const snapSamples = samples.slice(21, 42);
+  return {
+    id: "snap-1",
+    engine: "Rotax",
+    trackName: "Test Track",
+    courseName: "Sprint",
+    lapTimeMs: 820,
+    sourceFileName: "session.csv",
+    sourceLapNumber: 2,
+    samples: snapSamples,
+    course: {
+      name: "Sprint",
+      startFinishA: { lat: 0, lon: 0 },
+      startFinishB: { lat: 0.0001, lon: 0 },
+    },
+    setup: setup({ id: "baseline" }),
+    ...overrides,
+  };
+}
+
+describe("buildCoachingReport with an active snapshot", () => {
+  it("uses the snapshot as the reference profile when loaded", () => {
+    const report = buildCoachingReport(input({ activeSnapshot: snapshot() }));
+    expect(report.referenceSource).toBe("snapshot");
+    expect(report.snapshotReference).toMatchObject({
+      engine: "Rotax",
+      trackName: "Test Track",
+      courseName: "Sprint",
+    });
+    expect(report.referenceProfile?.lapNumber).toBe(SNAPSHOT_LAP_NUMBER);
+    // In-session laps still resampled on the snapshot's grid for comparison.
+    expect(report.profiles).toHaveLength(2);
+    expect(report.profiles.every((p) => p.grid === report.referenceProfile?.grid)).toBe(true);
+  });
+
+  it("computes baselineDeltaMs from in-session best vs the snapshot lap time", () => {
+    const report = buildCoachingReport(input({ activeSnapshot: snapshot({ lapTimeMs: 750 }) }));
+    // In-session best lap is lap 2 (800 ms); snapshot is 750 ms ⇒ +50 ms.
+    expect(report.inSessionBestLapTimeMs).toBe(800);
+    expect(report.baselineDeltaMs).toBe(50);
+  });
+
+  it("defaults the subject to the in-session fastest lap when none is selected", () => {
+    const report = buildCoachingReport(
+      input({ selectedLapNumber: null, activeSnapshot: snapshot() }),
+    );
+    expect(report.subjectLapNumber).toBe(2);
+    expect(report.deltaMs).toHaveLength(GRID_POINTS);
+  });
+
+  it("emits a setup diff when both sessionSetup and snapshot.setup are present", () => {
+    const report = buildCoachingReport(
+      input({
+        activeSnapshot: snapshot({ setup: setup({ psiFrontLeft: 12 }) }),
+        sessionSetup: setup({ psiFrontLeft: 13 }),
+      }),
+    );
+    expect(report.setupChanges).toHaveLength(1);
+    expect(report.setupChanges[0]).toMatchObject({ field: "psiFrontLeft", delta: 1 });
+  });
+
+  it("surfaces the baseline setup as context when no live sessionSetup is assigned", () => {
+    const report = buildCoachingReport(input({ activeSnapshot: snapshot(), sessionSetup: null }));
+    expect(report.baselineSetup).not.toBeNull();
+    expect(report.setupChanges).toEqual([]);
+  });
+
+  it("falls back to best-lap reference when the snapshot has too few samples", () => {
+    const report = buildCoachingReport(
+      input({ activeSnapshot: snapshot({ samples: samples.slice(21, 23) }) }),
+    );
+    expect(report.referenceSource).toBe("best-lap");
+    expect(report.snapshotReference).toBeNull();
   });
 });

@@ -3,6 +3,7 @@ import type { GpsSample, Lap } from "@/types/racing";
 import {
   buildComparableProfiles,
   buildLapProfile,
+  buildSampleProfile,
   cumulativeDistanceMeters,
   deltaTimeMs,
   distanceGrid,
@@ -140,6 +141,18 @@ describe("buildLapProfile", () => {
     // sample index 3 (the 3rd of the lap slice, ~2/3 along) carries throttle 80;
     // its neighbours are NaN, so interpolation around it yields NaN.
     expect(profile.channels.throttle.some((v) => Number.isNaN(v))).toBe(true);
+  });
+});
+
+describe("buildSampleProfile", () => {
+  it("treats the slice's first timestamp as elapsed-time zero", () => {
+    // Samples carry wall-clock t (1000 ms onward), as a snapshot would.
+    const samples = eastwardRun(5).map((s) => ({ ...s, t: s.t + 1000 }));
+    const grid = distanceGrid(4 * STEP_M, 5);
+    const profile = buildSampleProfile(samples, { lapNumber: -1, grid });
+    expect(profile.lapNumber).toBe(-1);
+    expect(profile.elapsedMs[0]).toBe(0);
+    expect(profile.elapsedMs[profile.elapsedMs.length - 1]).toBeCloseTo(4000, 0);
   });
 });
 
