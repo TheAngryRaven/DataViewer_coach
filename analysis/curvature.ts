@@ -68,11 +68,15 @@ export function curvatureFromHeading(headingRad: number[], distance: number[]): 
   return out;
 }
 
+/** Curvature (1/m) for a sample slice, resampled onto `grid`; zeros when too short to compute. */
+export function curvatureFromSamples(samples: GpsSample[], grid: number[]): number[] {
+  if (samples.length < 3) return grid.map(() => 0);
+  const distance = cumulativeDistanceMeters(samples);
+  const heading = unwrapRadians(sampleHeadingsRad(samples));
+  return resample(distance, curvatureFromHeading(heading, distance), grid);
+}
+
 /** Curvature (1/m) for a lap, resampled onto `grid`; zeros when too short to compute. */
 export function curvatureForLap(samples: GpsSample[], lap: Lap, grid: number[]): number[] {
-  const slice = samples.slice(lap.startIndex, lap.endIndex + 1);
-  if (slice.length < 3) return grid.map(() => 0);
-  const distance = cumulativeDistanceMeters(slice);
-  const heading = unwrapRadians(sampleHeadingsRad(slice));
-  return resample(distance, curvatureFromHeading(heading, distance), grid);
+  return curvatureFromSamples(samples.slice(lap.startIndex, lap.endIndex + 1), grid);
 }

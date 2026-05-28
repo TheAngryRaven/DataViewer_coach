@@ -6,7 +6,7 @@ import type { DataViewerPlugin } from "@/plugins/types";
 const plugin: DataViewerPlugin = {
   id: "ai-coaching",
   name: "AI Coaching",
-  version: "0.2.5",
+  version: "0.3.0",
   priority: 100, // overrides a public coach with the same id
   setup(ctx) {
     ctx.registry.contribute(PANELS_POINT, {

@@ -131,6 +131,36 @@ export function buildLapProfile(
   };
 }
 
+/**
+ * Build a distance-domain profile from a raw sample slice (no host `Lap`
+ * required). Used for snapshot reference laps, which arrive as pre-trimmed
+ * samples; the elapsed-time channel is computed from each sample's `t` relative
+ * to the slice's first sample, so the snapshot's original wall-clock offset
+ * doesn't leak in.
+ */
+export function buildSampleProfile(
+  samples: GpsSample[],
+  options: { lapNumber: number; grid: number[]; channelIds?: string[] },
+): LapProfile {
+  const dist = cumulativeDistanceMeters(samples);
+  const startMs = samples.length > 0 ? samples[0].t : 0;
+  const speedYs = samples.map((s) => s.speedMps);
+  const elapsedYs = samples.map((s) => s.t - startMs);
+  const channels: Record<string, number[]> = {};
+  for (const id of options.channelIds ?? []) {
+    const ys = samples.map((s) => s.extraFields[id] ?? Number.NaN);
+    channels[id] = resample(dist, ys, options.grid);
+  }
+  return {
+    lapNumber: options.lapNumber,
+    lengthMeters: dist.length > 0 ? dist[dist.length - 1] : 0,
+    grid: options.grid,
+    speedMps: resample(dist, speedYs, options.grid),
+    elapsedMs: resample(dist, elapsedYs, options.grid),
+    channels,
+  };
+}
+
 /** The middle value of a copy-sorted list; NaN when empty. */
 function medianOf(values: number[]): number {
   if (values.length === 0) return Number.NaN;

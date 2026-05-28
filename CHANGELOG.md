@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-28
+
+### Added
+
+- Consume the host's **`activeSnapshot`** and **`sessionSetup`** plugin-panel
+  fields (DovesDataViewer BETA PR #76). The coach now treats a loaded snapshot
+  as the reference comparison lap: the snapshot's clean sample slice defines
+  the distance grid, corners are detected on its speed trace, and the in-session
+  laps are resampled onto that grid. Headline number is the lap-time delta
+  between the in-session best and the snapshot baseline, and the comparison
+  engine / lap time / track / course is surfaced in a "Compared against …" badge
+  in the header (the engine may differ from what's running today, since
+  snapshots are keyed on course + engine). When no snapshot is loaded the coach
+  behaves exactly as before, falling back to the in-session fastest lap.
+- A **setup diff** (`analysis/setupDiff.ts`) between the frozen
+  `activeSnapshot.setup` and the live `sessionSetup`, surfaced in a "Setup
+  changes since baseline" section ("Front-left PSI: 12 → 13 psi (+1)"). PSI,
+  tire width/diameter, tire brand, and template custom fields are all compared;
+  a unit-system or template change flags itself first so width/diameter deltas
+  aren't read with the wrong unit. When the live setup is missing, the frozen
+  baseline setup is still surfaced as context ("the baseline lap was run with
+  X PSI").
+- Mirrors for the new host contract: `VehicleSetup` (`plugins/setup.ts`) and
+  `PluginSnapshot` (extended into `plugins/panels.ts`). Both new
+  `PluginPanelProps` fields are typed `optional | null` so the plugin keeps
+  working against older host builds that don't ship them.
+- `buildSampleProfile` and `curvatureFromSamples` helpers — distance-domain
+  primitives that work on a raw sample slice (no host `Lap` required), used to
+  fold the snapshot into the existing analysis pipeline.
+
 ### Changed
 
 - Expanded the README with a detailed **"What it does today"** walkthrough of the

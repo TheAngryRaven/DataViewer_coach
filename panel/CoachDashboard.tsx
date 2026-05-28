@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type uPlot from "uplot";
 import type { PluginPanelProps } from "@/plugins/panels";
+import type { VehicleSetup } from "@/plugins/setup";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { describeCornerInsight } from "../analysis/coaching";
+import { describeSetupChange } from "../analysis/setupDiff";
 import { UplotChart } from "./UplotChart";
 import { RaceLineMap, CAUSE_COLOR, CAUSE_LABEL } from "./RaceLineMap";
 
@@ -39,12 +41,16 @@ export default function CoachDashboard(props: PluginPanelProps) {
     if (report.referenceProfile === null) return null;
     const xs = report.grid;
     const best = report.referenceProfile.speedMps.map(toSpeed);
+    const referenceLabel =
+      report.referenceSource === "snapshot" && report.snapshotReference
+        ? `Snapshot (${formatLapTimeMs(report.snapshotReference.lapTimeMs)})`
+        : `Best (lap ${report.bestLapNumber ?? "?"})`;
     const series: uPlot.Series[] = [
       {},
-      { label: `Best (lap ${report.bestLapNumber ?? "?"})`, stroke: REFERENCE_STROKE, width: 2 },
+      { label: referenceLabel, stroke: REFERENCE_STROKE, width: 2 },
     ];
     const ys: number[][] = [best];
-    if (report.subjectProfile && report.subjectProfile.lapNumber !== report.bestLapNumber) {
+    if (report.subjectProfile && report.subjectProfile !== report.referenceProfile) {
       ys.push(report.subjectProfile.speedMps.map(toSpeed));
       series.push({ label: `Lap ${report.subjectProfile.lapNumber}`, stroke: SUBJECT_STROKE, width: 2 });
     }
@@ -61,15 +67,16 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   const deltaChart = useMemo(() => {
     if (report.deltaMs.length === 0) return null;
+    const versus = report.referenceSource === "snapshot" ? "snapshot" : "best";
     return {
       data: [report.grid, report.deltaMs.map((ms) => ms / 1000)] as uPlot.AlignedData,
       options: {
         scales: { x: { time: false } },
-        axes: [{ label: "Distance (m)" }, { label: "Δ time vs best (s)" }],
+        axes: [{ label: "Distance (m)" }, { label: `Δ time vs ${versus} (s)` }],
         series: [
           {},
           {
-            label: `Lap ${report.subjectLapNumber ?? "?"} vs best`,
+            label: `Lap ${report.subjectLapNumber ?? "?"} vs ${versus}`,
             stroke: SUBJECT_STROKE,
             fill: "rgba(245,158,11,0.15)",
             width: 2,
@@ -89,10 +96,27 @@ export default function CoachDashboard(props: PluginPanelProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 16, height: "100%", overflowY: "auto" }}>
       <BetaBadge />
+      {report.snapshotReference !== null && (
+        <SnapshotBadge reference={report.snapshotReference} />
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Summary report={report} useKph={useKph} />
         <MethodToggle method={cornerMethod} onChange={setCornerMethod} cornerCount={report.corners.length} />
       </div>
+
+      {report.setupChanges.length > 0 && (
+        <Section title="Setup changes since baseline">
+          <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+            {report.setupChanges.map((change) => (
+              <li key={change.field}>{describeSetupChange(change)}</li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {report.setupChanges.length === 0 && report.baselineSetup !== null && (
+        <BaselineSetupNote setup={report.baselineSetup} />
+      )}
 
       {speedChart && (
         <Section title="Speed trace">
@@ -214,12 +238,19 @@ export default function CoachDashboard(props: PluginPanelProps) {
 }
 
 function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }) {
-  const { debrief } = report;
+  const { debrief, baselineDeltaMs } = report;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Chip label="Laps" value={debrief.validLaps < debrief.lapsAnalysed ? `${debrief.validLaps}/${debrief.lapsAnalysed}` : `${debrief.lapsAnalysed}`} />
         {debrief.best && <Chip label="Best" value={`${formatLapTimeMs(debrief.best.lapTimeMs)} (L${debrief.best.lapNumber})`} />}
+        {baselineDeltaMs !== null && (
+          <Chip
+            label="vs baseline"
+            value={`${baselineDeltaMs >= 0 ? "+" : "-"}${Math.abs(baselineDeltaMs / 1000).toFixed(2)}s`}
+            valueColor={baselineDeltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE}
+          />
+        )}
         {debrief.consistency && <Chip label="Consistency" value={`±${(debrief.consistency.stdevMs / 1000).toFixed(2)}s`} />}
         {debrief.theoreticalBestMs !== null && <Chip label="Theoretical" value={formatLapTimeMs(debrief.theoreticalBestMs)} />}
         {debrief.topSpeedMph !== null && debrief.topSpeedKph !== null && (
@@ -228,6 +259,57 @@ function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }
       </div>
       <p style={{ margin: 0 }}>{debrief.takeaway}</p>
     </div>
+  );
+}
+
+function SnapshotBadge({
+  reference,
+}: {
+  reference: NonNullable<CoachingReport["snapshotReference"]>;
+}) {
+  return (
+    <div
+      style={{
+        padding: "6px 12px",
+        borderRadius: 6,
+        background: "rgba(34,211,238,0.08)",
+        border: "1px solid rgba(34,211,238,0.35)",
+        fontSize: 13,
+        display: "flex",
+        gap: 6,
+        flexWrap: "wrap",
+        alignItems: "baseline",
+      }}
+    >
+      <span style={{ color: REFERENCE_STROKE, fontWeight: 600 }}>Compared against:</span>
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>
+        {reference.engine} · {formatLapTimeMs(reference.lapTimeMs)} · {reference.trackName} — {reference.courseName}
+      </span>
+    </div>
+  );
+}
+
+function BaselineSetupNote({ setup }: { setup: VehicleSetup }) {
+  const psi = [setup.psiFrontLeft, setup.psiFrontRight, setup.psiRearLeft, setup.psiRearRight];
+  const knownPsi = psi.filter((v): v is number => typeof v === "number");
+  const psiText =
+    knownPsi.length === 4
+      ? `PSI ${psi.join(" / ")} (FL / FR / RL / RR)`
+      : knownPsi.length > 0
+      ? `PSI ${knownPsi.join(" / ")}`
+      : null;
+  const parts = [
+    setup.tireBrand ? `tires: ${setup.tireBrand}` : null,
+    psiText,
+  ].filter((p): p is string => p !== null);
+  if (parts.length === 0) return null;
+  return (
+    <Section title="Baseline setup">
+      <p className="text-muted-foreground" style={{ margin: 0, fontSize: 13 }}>
+        Frozen from the baseline lap — no live setup is assigned, so no diff is shown.
+      </p>
+      <p style={{ margin: 0, fontSize: 13 }}>{parts.join(" · ")}</p>
+    </Section>
   );
 }
 
@@ -334,11 +416,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Chip({ label, value }: { label: string; value: string }) {
+function Chip({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <span style={{ display: "inline-flex", gap: 6, alignItems: "baseline", padding: "4px 10px", borderRadius: 6, background: "rgba(127,127,127,0.12)" }}>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>{label}</span>
-      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{value}</span>
+      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: valueColor }}>{value}</span>
     </span>
   );
 }
