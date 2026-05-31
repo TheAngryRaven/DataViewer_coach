@@ -4,15 +4,17 @@ import type { PluginPanelProps } from "@/plugins/panels";
 import type { VehicleSetup } from "@/plugins/setup";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
+import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
+import type { BrakingPoint, SectorDelta, ThrottlePoint } from "../analysis/segments";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { describeCornerInsight } from "../analysis/coaching";
 import { describeSetupChange } from "../analysis/setupDiff";
-import { UplotChart } from "./UplotChart";
+import { UplotChart, verticalMarkersPlugin, type ChartMarker } from "./UplotChart";
 import { RaceLineMap, CAUSE_COLOR, CAUSE_LABEL } from "./RaceLineMap";
 
 const CAUSE_LEGEND = (
   ["low_min_speed", "scrubbing", "unused_grip", "inconsistent_apex", "corner_execution"] as const
-).map((cause) => ({ color: CAUSE_COLOR[cause], label: CAUSE_LABEL[cause] }));
+).map((cause) => ({ cause, color: CAUSE_COLOR[cause], label: CAUSE_LABEL[cause] }));
 
 // Full-bleed (chromeless) Stage-1 dashboard for the Coach tab. A thin view over
 // the pure `buildCoachingReport` analysis; no model, no network. Default-exported
@@ -20,12 +22,15 @@ const CAUSE_LEGEND = (
 
 const MPS_TO_KPH = 3.6;
 const MPS_TO_MPH = 2.2369362920544;
+const G_MPS2 = 9.80665;
 const REFERENCE_STROKE = "#22d3ee";
 const SUBJECT_STROKE = "#f59e0b";
 
 export default function CoachDashboard(props: PluginPanelProps) {
   const { data, laps, course, useKph } = props;
   const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
+  // Legend toggles: causes the driver has switched off are hidden on the map.
+  const [hiddenCauses, setHiddenCauses] = useState<ReadonlySet<CornerRootCause>>(new Set());
   const report = useMemo(
     () => buildCoachingReport({ ...props, cornerMethod }),
     [props, cornerMethod],
@@ -37,14 +42,57 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   const toSpeed = (mps: number) => (useKph ? mps * MPS_TO_KPH : mps * MPS_TO_MPH);
 
+  const referenceLabel =
+    report.referenceSource === "snapshot" && report.snapshotReference
+      ? `Snapshot (${formatLapTimeMs(report.snapshotReference.lapTimeMs)})`
+      : `Best (lap ${report.bestLapNumber ?? "?"})`;
+
+  // Sector 2/3 boundary lines, shared across every distance-axis chart.
+  const sectorMarkers = useMemo<ChartMarker[]>(
+    () =>
+      report.sectorBoundaries.map((b) => ({
+        x: b.distanceM,
+        label: b.sector.toUpperCase(),
+      })),
+    [report.sectorBoundaries],
+  );
+  const markerPlugins = useMemo(
+    () => (sectorMarkers.length > 0 ? [verticalMarkersPlugin(sectorMarkers)] : undefined),
+    [sectorMarkers],
+  );
+
+  const latGChart = useMemo(() => {
+    if (report.referenceProfile === null || report.referenceLatAccelMps2.length === 0) return null;
+    const toG = (mps2: number) => mps2 / G_MPS2;
+    const series: uPlot.Series[] = [
+      {},
+      { label: referenceLabel, stroke: REFERENCE_STROKE, width: 2 },
+    ];
+    const ys: number[][] = [report.referenceLatAccelMps2.map(toG)];
+    if (
+      report.subjectLatAccelMps2 &&
+      report.subjectProfile &&
+      report.subjectProfile !== report.referenceProfile
+    ) {
+      ys.push(report.subjectLatAccelMps2.map(toG));
+      series.push({ label: `Lap ${report.subjectProfile.lapNumber}`, stroke: SUBJECT_STROKE, width: 2 });
+    }
+    return {
+      data: [report.grid, ...ys] as uPlot.AlignedData,
+      options: {
+        scales: { x: { time: false } },
+        axes: [{ label: "Distance (m)" }, { label: "Lateral g" }],
+        series,
+        legend: { show: true },
+        plugins: markerPlugins,
+      } satisfies Omit<uPlot.Options, "width" | "height">,
+    };
+  }, [report, referenceLabel, markerPlugins]);
+
   const speedChart = useMemo(() => {
     if (report.referenceProfile === null) return null;
     const xs = report.grid;
     const best = report.referenceProfile.speedMps.map(toSpeed);
-    const referenceLabel =
-      report.referenceSource === "snapshot" && report.snapshotReference
-        ? `Snapshot (${formatLapTimeMs(report.snapshotReference.lapTimeMs)})`
-        : `Best (lap ${report.bestLapNumber ?? "?"})`;
     const series: uPlot.Series[] = [
       {},
       { label: referenceLabel, stroke: REFERENCE_STROKE, width: 2 },
@@ -61,9 +109,10 @@ export default function CoachDashboard(props: PluginPanelProps) {
         axes: [{ label: "Distance (m)" }, { label: `Speed (${useKph ? "km/h" : "mph"})` }],
         series,
         legend: { show: true },
+        plugins: markerPlugins,
       } satisfies Omit<uPlot.Options, "width" | "height">,
     };
-  }, [report, useKph]);
+  }, [report, useKph, referenceLabel, markerPlugins]);
 
   const deltaChart = useMemo(() => {
     if (report.deltaMs.length === 0) return null;
@@ -83,19 +132,18 @@ export default function CoachDashboard(props: PluginPanelProps) {
           },
         ],
         legend: { show: true },
+        plugins: markerPlugins,
       } satisfies Omit<uPlot.Options, "width" | "height">,
     };
-  }, [report]);
+  }, [report, markerPlugins]);
 
   if (data === null) return <Center>Load a session to start coaching.</Center>;
   if (laps.length === 0) return <Center>No complete laps detected yet.</Center>;
 
-  const brakingByCorner = new Map(report.braking.map((b) => [b.cornerIndex, b]));
-  const throttleByCorner = new Map(report.throttle.map((t) => [t.cornerIndex, t]));
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 16, height: "100%", overflowY: "auto" }}>
       <BetaBadge />
+      <AdvisoryNote />
       {report.snapshotReference !== null && (
         <SnapshotBadge reference={report.snapshotReference} />
       )}
@@ -118,6 +166,12 @@ export default function CoachDashboard(props: PluginPanelProps) {
         <BaselineSetupNote setup={report.baselineSetup} />
       )}
 
+      {latGChart && (
+        <Section title="Lateral g (cornering load)">
+          <UplotChart data={latGChart.data} options={latGChart.options} height={180} />
+        </Section>
+      )}
+
       {speedChart && (
         <Section title="Speed trace">
           <UplotChart data={speedChart.data} options={speedChart.options} height={220} />
@@ -131,27 +185,8 @@ export default function CoachDashboard(props: PluginPanelProps) {
       )}
 
       {report.insights.length > 0 && (
-        <Section title="Where you're losing time (attributed)">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {report.insights.slice(0, 3).map((insight) => {
-              const braking = brakingByCorner.get(insight.cornerIndex);
-              const throttle = throttleByCorner.get(insight.cornerIndex);
-              return (
-                <div key={insight.cornerIndex} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span>{describeCornerInsight(insight, useKph)}</span>
-                  <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-                    confidence: {insight.confidence}
-                    {braking?.brakingDistanceM != null
-                      ? ` · braking ${Math.round(braking.brakingDistanceM)} m out`
-                      : ""}
-                    {throttle?.throttleDist != null
-                      ? ` · back to throttle @ ${Math.round(throttle.throttleDist)} m`
-                      : ""}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        <Section title="Where you're losing time (by sector)">
+          <CornerBreakdown report={report} useKph={useKph} />
         </Section>
       )}
 
@@ -184,17 +219,10 @@ export default function CoachDashboard(props: PluginPanelProps) {
           <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
             Corners are coloured by attributed cause (dashed = low-confidence /
             advisory). Cyan ring = geometric apex · dashed purple = apex offset ·
-            green dot = exit onto a straight (grey = none). Click any marker;
-            toggle a satellite background top-right.
+            green dot = exit onto a straight (grey = none). Tap a cause below to
+            show/hide it; click any marker; toggle a satellite background top-right.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {CAUSE_LEGEND.map((entry) => (
-              <span key={entry.label} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12 }}>
-                <span style={{ width: 12, height: 4, borderRadius: 2, background: entry.color }} />
-                <span className="text-muted-foreground">{entry.label}</span>
-              </span>
-            ))}
-          </div>
+          <CauseLegend hidden={hiddenCauses} onToggle={setHiddenCauses} />
           <RaceLineMap
             samples={data.samples}
             lap={bestLap}
@@ -205,30 +233,8 @@ export default function CoachDashboard(props: PluginPanelProps) {
             course={course}
             useKph={useKph}
             height={420}
+            hiddenCauses={hiddenCauses}
           />
-        </Section>
-      )}
-
-      {report.sectorDeltas.length > 0 && (
-        <Section title="Sector deltas vs best">
-          <div style={{ display: "flex", gap: 24 }}>
-            {report.sectorDeltas.map((sector) => (
-              <div key={sector.sector} style={{ display: "flex", flexDirection: "column" }}>
-                <span className="text-muted-foreground" style={{ textTransform: "uppercase", fontSize: 12 }}>
-                  {sector.sector}
-                </span>
-                <span
-                  style={{
-                    fontVariantNumeric: "tabular-nums",
-                    color: sector.deltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE,
-                  }}
-                >
-                  {sector.deltaMs >= 0 ? "+" : "-"}
-                  {Math.abs(sector.deltaMs / 1000).toFixed(2)}s
-                </span>
-              </div>
-            ))}
-          </div>
         </Section>
       )}
 
@@ -403,6 +409,189 @@ function BetaBadge() {
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
         deterministic, on-device — figures may shift as the analysis is tuned
       </span>
+    </div>
+  );
+}
+
+// Sits under the experimental badge, same pill-plus-caption shape: the
+// GPS-derived advisory that used to be tagged onto every scrubbing / unused-grip
+// line, hoisted to a single warning at the top.
+function AdvisoryNote() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          padding: "3px 10px",
+          borderRadius: 999,
+          background: "rgba(249,115,22,0.16)",
+          color: "#f97316",
+          border: "1px solid rgba(249,115,22,0.4)",
+        }}
+      >
+        GPS-derived · advisory
+      </span>
+      <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+        scrubbing &amp; unused-grip reads come from a GPS-derived friction circle
+        (lateral g ≈ v²·κ) — directional, not absolute; a chassis accelerometer
+        would sharpen them
+      </span>
+    </div>
+  );
+}
+
+const SECTOR_LABELS: Record<SectorDelta["sector"], string> = {
+  s1: "Sector 1",
+  s2: "Sector 2",
+  s3: "Sector 3",
+};
+
+// Corner notes grouped under their sector. When the course defines sector
+// boundaries we place each corner by its apex distance and show the sector split
+// (time : delta) as a header; otherwise we fall back to a flat, ranked list.
+function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: boolean }) {
+  const brakingByCorner = new Map(report.braking.map((b) => [b.cornerIndex, b]));
+  const throttleByCorner = new Map(report.throttle.map((t) => [t.cornerIndex, t]));
+  const rowFor = (insight: CornerInsight) => (
+    <InsightRow
+      key={insight.cornerIndex}
+      insight={insight}
+      useKph={useKph}
+      braking={brakingByCorner.get(insight.cornerIndex)}
+      throttle={throttleByCorner.get(insight.cornerIndex)}
+    />
+  );
+
+  const s2 = report.sectorBoundaries.find((b) => b.sector === "s2")?.distanceM ?? null;
+  const s3 = report.sectorBoundaries.find((b) => b.sector === "s3")?.distanceM ?? null;
+
+  // No boundaries to group by → the original flat, ranked list.
+  if (s2 === null && s3 === null) {
+    return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{report.insights.map(rowFor)}</div>;
+  }
+
+  const sectorOf = (apexDist: number): SectorDelta["sector"] => {
+    if (s3 !== null && apexDist >= s3) return "s3";
+    if (s2 !== null && apexDist >= s2) return "s2";
+    return "s1";
+  };
+  const deltaByKey = new Map(report.sectorDeltas.map((d) => [d.sector, d]));
+  const sectors: SectorDelta["sector"][] = ["s1", "s2", "s3"];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {sectors.map((key) => {
+        const insights = report.insights.filter((i) => sectorOf(i.apexDist) === key);
+        return (
+          <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <SectorHeader label={SECTOR_LABELS[key]} delta={deltaByKey.get(key) ?? null} />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                paddingLeft: 12,
+                borderLeft: "2px solid rgba(127,127,127,0.25)",
+              }}
+            >
+              {insights.length > 0 ? (
+                insights.map(rowFor)
+              ) : (
+                <span className="text-muted-foreground" style={{ fontSize: 13 }}>
+                  On your best pace through here.
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SectorHeader({ label, delta }: { label: string; delta: SectorDelta | null }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+      <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
+      {delta && (
+        <span className="text-muted-foreground" style={{ fontVariantNumeric: "tabular-nums", fontSize: 13 }}>
+          {formatLapTimeMs(delta.subjectMs)}
+          {" : "}
+          <span style={{ color: delta.deltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE }}>
+            {delta.deltaMs >= 0 ? "+" : "-"}
+            {Math.abs(delta.deltaMs / 1000).toFixed(2)}s
+          </span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function InsightRow({
+  insight,
+  useKph,
+  braking,
+  throttle,
+}: {
+  insight: CornerInsight;
+  useKph: boolean;
+  braking: BrakingPoint | undefined;
+  throttle: ThrottlePoint | undefined;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <span>{describeCornerInsight(insight, useKph)}</span>
+      <span className="text-muted-foreground" style={{ fontSize: 12 }}>
+        confidence: {insight.confidence}
+        {braking?.brakingDistanceM != null ? ` · braking ${Math.round(braking.brakingDistanceM)} m out` : ""}
+        {throttle?.throttleDist != null ? ` · back to throttle @ ${Math.round(throttle.throttleDist)} m` : ""}
+      </span>
+    </div>
+  );
+}
+
+function CauseLegend({
+  hidden,
+  onToggle,
+}: {
+  hidden: ReadonlySet<CornerRootCause>;
+  onToggle: (next: ReadonlySet<CornerRootCause>) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {CAUSE_LEGEND.map((entry) => {
+        const off = hidden.has(entry.cause);
+        return (
+          <button
+            key={entry.cause}
+            type="button"
+            aria-pressed={!off}
+            onClick={() => {
+              const next = new Set(hidden);
+              if (off) next.delete(entry.cause);
+              else next.add(entry.cause);
+              onToggle(next);
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "5px 10px",
+              borderRadius: 6,
+              cursor: "pointer",
+              border: "1px solid rgba(127,127,127,0.3)",
+              background: off ? "transparent" : "rgba(127,127,127,0.12)",
+              color: "inherit",
+              fontSize: 13,
+              opacity: off ? 0.45 : 1,
+            }}
+          >
+            <span style={{ width: 14, height: 6, borderRadius: 2, background: entry.color }} />
+            <span>{entry.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

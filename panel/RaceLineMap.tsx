@@ -81,6 +81,8 @@ export interface RaceLineMapProps {
   course: Course | null;
   useKph: boolean;
   height: number;
+  /** Root causes toggled off in the legend — corners attributed to these are hidden. */
+  hiddenCauses?: ReadonlySet<CornerRootCause>;
 }
 
 function numberIcon(label: string, color: string): L.DivIcon {
@@ -92,7 +94,7 @@ function numberIcon(label: string, color: string): L.DivIcon {
   });
 }
 
-export function RaceLineMap({ samples, lap, corners, apex, exits, insights, course, useKph, height }: RaceLineMapProps) {
+export function RaceLineMap({ samples, lap, corners, apex, exits, insights, course, useKph, height, hiddenCauses }: RaceLineMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -141,6 +143,8 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
       const a = apexByCorner.get(corner.index);
       const exit = exitByCorner.get(corner.index);
       const insight = insightByCorner.get(corner.index);
+      // Legend toggle: drop corners whose attributed cause is hidden.
+      if (insight && hiddenCauses?.has(insight.rootCause)) continue;
       const style = cornerStyle(insight);
       const vMin = positionAtDistance(track, corner.apexDist);
 
@@ -255,7 +259,7 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
     }
 
     map.fitBounds(L.latLngBounds(latlngs), { padding: [24, 24] });
-  }, [samples, lap, corners, apex, exits, course, useKph]);
+  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses]);
 
   // Optional online tile background, under the race line.
   useEffect(() => {

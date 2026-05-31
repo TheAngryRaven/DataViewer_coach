@@ -1,4 +1,4 @@
-import type { GpsSample, Lap, LatLon } from "@/types/racing";
+import type { GpsSample, Lap, LatLon, SectorLine } from "@/types/racing";
 
 // Distance-domain interpreter (ARCHITECTURE §4-5). Pure, deterministic geometry
 // that turns the host's time-sampled GPS stream into a distance-indexed view, so
@@ -211,6 +211,40 @@ export function lapTrack(samples: GpsSample[], lap: Lap): LapTrack {
     positions: slice.map((s) => ({ lat: s.lat, lon: s.lon })),
     distances: cumulativeDistanceMeters(slice),
   };
+}
+
+/**
+ * Fraction along p0->p1 (0..1) where it crosses the segment a->b, or null when
+ * they don't intersect. Planar approximation (lon as x, lat as y) — fine over a
+ * track-sized patch, where a sector line is short and roughly perpendicular.
+ */
+function segmentCrossFraction(p0: LatLon, p1: LatLon, a: LatLon, b: LatLon): number | null {
+  const rx = p1.lon - p0.lon;
+  const ry = p1.lat - p0.lat;
+  const sx = b.lon - a.lon;
+  const sy = b.lat - a.lat;
+  const denom = rx * sy - ry * sx;
+  if (denom === 0) return null; // parallel / degenerate
+  const qpx = a.lon - p0.lon;
+  const qpy = a.lat - p0.lat;
+  const t = (qpx * sy - qpy * sx) / denom;
+  const u = (qpx * ry - qpy * rx) / denom;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return t;
+}
+
+/**
+ * Cumulative distance (metres from lap start) where a lap track first crosses a
+ * sector boundary line, or null when the path never crosses it. Used to place
+ * sector splits on the distance axis (chart markers, corner grouping).
+ */
+export function distanceAtLineCrossing(track: LapTrack, line: SectorLine): number | null {
+  const { positions, distances } = track;
+  for (let i = 0; i + 1 < positions.length; i++) {
+    const t = segmentCrossFraction(positions[i], positions[i + 1], line.a, line.b);
+    if (t !== null) return distances[i] + t * (distances[i + 1] - distances[i]);
+  }
+  return null;
 }
 
 /** Interpolate the lat/lon position at a given distance along a lap track (clamped). */

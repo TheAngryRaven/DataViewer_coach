@@ -6,6 +6,7 @@ import {
   buildSampleProfile,
   cumulativeDistanceMeters,
   deltaTimeMs,
+  distanceAtLineCrossing,
   distanceGrid,
   haversineMeters,
   interpolateAt,
@@ -197,6 +198,30 @@ describe("lapTrack / positionAtDistance", () => {
     const mid = positionAtDistance(track, STEP_M / 2); // halfway into the first segment
     expect(mid.lat).toBe(0);
     expect(mid.lon).toBeCloseTo(0.0015, 6);
+  });
+});
+
+describe("distanceAtLineCrossing", () => {
+  // The eastward run crosses lon = 0.0025 halfway between samples 2 and 3.
+  const track = lapTrack(eastwardRun(6), lap(1, 0, 5));
+
+  it("returns the cumulative distance where the path crosses a boundary line", () => {
+    const crossing = distanceAtLineCrossing(track, {
+      a: { lat: -0.001, lon: 0.0025 },
+      b: { lat: 0.001, lon: 0.0025 },
+    });
+    expect(crossing).not.toBeNull();
+    expect(crossing as number).toBeCloseTo(2.5 * STEP_M, 1);
+  });
+
+  it("is null when the line segment doesn't reach the path", () => {
+    // A short segment well north of the (equatorial) path never crosses it.
+    expect(
+      distanceAtLineCrossing(track, {
+        a: { lat: 0.01, lon: 0.0025 },
+        b: { lat: 0.02, lon: 0.0025 },
+      }),
+    ).toBeNull();
   });
 });
 

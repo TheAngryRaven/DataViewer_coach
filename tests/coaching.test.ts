@@ -157,14 +157,16 @@ describe("describeCornerInsight", () => {
     expect(note).toContain("Repeating");
   });
 
-  it("flags grip-based reads as advisory", () => {
-    expect(describeCornerInsight({ ...base, rootCause: "scrubbing" }, false)).toContain("advisory");
+  it("phrases grip-based reads without a per-line advisory tag (it lives in the header warning now)", () => {
+    const scrubbing = describeCornerInsight({ ...base, rootCause: "scrubbing" }, false);
+    expect(scrubbing).toContain("scrubbing speed");
+    expect(scrubbing).not.toContain("advisory");
     const unused = describeCornerInsight(
       { ...base, rootCause: "unused_grip", evidence: { ...base.evidence, envelopeUtil: 0.6 } },
       false,
     );
     expect(unused).toContain("60%");
-    expect(unused).toContain("advisory");
+    expect(unused).not.toContain("advisory");
   });
 
   it("is honest when the cause is unresolved", () => {

@@ -11,8 +11,11 @@ import {
   buildSampleProfile,
   cumulativeDistanceMeters,
   deltaTimeMs,
+  distanceAtLineCrossing,
   distanceGrid,
+  lapTrack,
   type LapProfile,
+  type LapTrack,
 } from "./distance";
 import { buildComparableProfiles } from "./distance";
 import {
@@ -70,6 +73,14 @@ export const SNAPSHOT_LAP_NUMBER = -1;
 /** Where the comparison reference came from. */
 export type ReferenceSource = "best-lap" | "snapshot";
 
+/** A sector split located on the shared distance grid (for chart markers + grouping). */
+export interface SectorBoundary {
+  /** Which boundary this is: the entry to sector 2 or sector 3. */
+  sector: "s2" | "s3";
+  /** Distance along the grid (metres) where the reference lap crosses the boundary line. */
+  distanceM: number;
+}
+
 /** Lightweight metadata about a loaded snapshot, for the dashboard header. */
 export interface SnapshotReference {
   engine: string;
@@ -87,12 +98,18 @@ export interface CoachingReport {
   bestLapNumber: number | null;
   subjectLapNumber: number | null;
   sectorDeltas: SectorDelta[];
+  /** Sector 2/3 boundary crossings on the grid; empty when the course defines no sectors. */
+  sectorBoundaries: SectorBoundary[];
   grid: number[];
   profiles: LapProfile[];
   referenceProfile: LapProfile | null;
   subjectProfile: LapProfile | null;
   /** Subject-vs-reference time delta along the grid (ms; >0 = subject behind). */
   deltaMs: number[];
+  /** Reference-lap lateral acceleration (m/s^2) along the grid; GPS-derived (v^2*kappa), advisory. */
+  referenceLatAccelMps2: number[];
+  /** Subject-lap lateral acceleration (m/s^2) along the grid, or null when there's no distinct subject. */
+  subjectLatAccelMps2: number[] | null;
   corners: Corner[];
   cornerDeltas: CornerDelta[];
   topTimeLoss: CornerDelta[];
@@ -152,6 +169,33 @@ function sampleSliceLengthMeters(samples: { lat: number; lon: number }[]): numbe
   return dist[dist.length - 1];
 }
 
+/**
+ * Locate the sector 2/3 boundary crossings on the shared grid. The course's
+ * boundary lines are geographic; we find where the reference lap path crosses
+ * each, then rescale by the grid's length (the path's own length may differ by a
+ * few percent) so the result lines up with the chart axis and the corners.
+ */
+function buildSectorBoundaries(
+  track: LapTrack,
+  course: Course | null,
+  gridLengthM: number,
+): SectorBoundary[] {
+  if (course === null || gridLengthM <= 0) return [];
+  const refLen = track.distances.length > 0 ? track.distances[track.distances.length - 1] : 0;
+  if (refLen <= 0) return [];
+  const out: SectorBoundary[] = [];
+  for (const [sector, line] of [
+    ["s2", course.sector2],
+    ["s3", course.sector3],
+  ] as const) {
+    if (!line) continue;
+    const crossing = distanceAtLineCrossing(track, line);
+    if (crossing === null) continue;
+    out.push({ sector, distanceM: (crossing / refLen) * gridLengthM });
+  }
+  return out;
+}
+
 export function buildCoachingReport(input: ReportInput): CoachingReport {
   const { data, laps, selectedLapNumber, useKph } = input;
   const cornerMethod: CornerMethod = input.cornerMethod ?? "speed";
@@ -209,11 +253,14 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
     bestLapNumber,
     subjectLapNumber,
     sectorDeltas: [],
+    sectorBoundaries: [],
     grid: [],
     profiles: [],
     referenceProfile: null,
     subjectProfile: null,
     deltaMs: [],
+    referenceLatAccelMps2: [],
+    subjectLatAccelMps2: null,
     corners: [],
     cornerDeltas: [],
     topTimeLoss: [],
@@ -248,6 +295,8 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   let referenceProfile: LapProfile | null;
   let referenceCurvature: number[];
   let referenceSamples: { samples: typeof data.samples; startMs: number };
+  // The reference lap's GPS path, for locating sector boundaries on the grid.
+  let referenceTrack: LapTrack;
 
   if (usableSnapshot) {
     const snapLengthM = sampleSliceLengthMeters(usableSnapshot.samples);
@@ -263,6 +312,10 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
       samples: usableSnapshot.samples,
       startMs: usableSnapshot.samples[0]?.t ?? 0,
     };
+    referenceTrack = {
+      positions: usableSnapshot.samples.map((s) => ({ lat: s.lat, lon: s.lon })),
+      distances: cumulativeDistanceMeters(usableSnapshot.samples),
+    };
   } else {
     const built = buildComparableProfiles(data.samples, laps, GRID_POINTS, [...channelIds]);
     grid = built.grid;
@@ -274,6 +327,9 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
       ? curvatureForLap(data.samples, bestLap, grid)
       : grid.map(() => 0);
     referenceSamples = { samples: data.samples, startMs: 0 };
+    referenceTrack = bestLap
+      ? lapTrack(data.samples, bestLap)
+      : { positions: [], distances: [] };
   }
 
   const subjectProfile = profiles.find((p) => p.lapNumber === subjectLapNumber) ?? null;
@@ -306,6 +362,7 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
       : referenceCurvature;
   }
   const latAccel = lateralAccelMps2(inspect.speedMps, inspectCurvature);
+  const referenceLatAccel = lateralAccelMps2(referenceProfile.speedMps, referenceCurvature);
   const longAccel = longitudinalAccel(inspect.speedMps, inspect.elapsedMs);
   const envelope = gripEnvelopeMps2(combinedAccelMps2(latAccel, longAccel));
   const grip = cornerGrip(corners, grid, inspect.speedMps, latAccel, longAccel, envelope);
@@ -317,9 +374,15 @@ export function buildCoachingReport(input: ReportInput): CoachingReport {
   // the live session.
   const quality = assessQuality(data, sampleRateHz(referenceSamples.samples));
 
+  const gridLengthM = grid.length > 0 ? grid[grid.length - 1] : 0;
+  const sectorBoundaries = buildSectorBoundaries(referenceTrack, input.course, gridLengthM);
+
   return {
     ...empty,
     sampleRateHz: sampleRateHz(referenceSamples.samples),
+    sectorBoundaries,
+    referenceLatAccelMps2: referenceLatAccel,
+    subjectLatAccelMps2: subjectProfile ? latAccel : null,
     // Sector deltas read off host lap times; only meaningful in the
     // in-session best-vs-other case. A snapshot lap has no host-side sectors.
     sectorDeltas:
