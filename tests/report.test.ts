@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { FieldMapping, GpsSample, Lap, ParsedData } from "@/types/racing";
+import type { Course, FieldMapping, GpsSample, Lap, ParsedData } from "@/types/racing";
 import type { PluginSnapshot } from "@/plugins/panels";
 import type { VehicleSetup } from "@/plugins/setup";
 import {
@@ -110,6 +110,32 @@ describe("buildCoachingReport", () => {
     // Subject lap is slower overall, so it should show net time lost somewhere.
     expect(report.deltaMs[report.deltaMs.length - 1]).toBeGreaterThan(0);
     expect(report.sectorDeltas).toHaveLength(3);
+  });
+
+  it("locates sector boundaries on the grid and exposes lateral-g profiles", () => {
+    // Boundary lines run across the (equatorial) path at fixed longitudes.
+    const course: Course = {
+      name: "T",
+      startFinishA: { lat: -0.001, lon: 0 },
+      startFinishB: { lat: 0.001, lon: 0 },
+      sector2: { a: { lat: -0.001, lon: 0.0012 }, b: { lat: 0.001, lon: 0.0012 } },
+      sector3: { a: { lat: -0.001, lon: 0.0028 }, b: { lat: 0.001, lon: 0.0028 } },
+    };
+    const report = buildCoachingReport(input({ course }));
+
+    expect(report.sectorBoundaries.map((b) => b.sector)).toEqual(["s2", "s3"]);
+    const gridLen = report.grid[report.grid.length - 1];
+    const [s2, s3] = report.sectorBoundaries;
+    expect(s2.distanceM).toBeGreaterThan(0);
+    expect(s2.distanceM).toBeLessThan(s3.distanceM);
+    expect(s3.distanceM).toBeLessThan(gridLen);
+
+    expect(report.referenceLatAccelMps2).toHaveLength(GRID_POINTS);
+    expect(report.subjectLatAccelMps2).toHaveLength(GRID_POINTS);
+  });
+
+  it("leaves sector boundaries empty when the course defines none", () => {
+    expect(buildCoachingReport(input()).sectorBoundaries).toEqual([]);
   });
 
   it("gates throttle insight on the throttle capability", () => {

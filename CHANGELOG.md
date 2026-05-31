@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A **lateral-g comparison chart** above the speed trace, overlaying the
+  reference and subject laps' GPS-derived cornering load (lateral g ≈ v²·κ) on
+  the shared distance axis.
+- **Sector boundary markers** on every distance-axis chart (speed, lateral g,
+  delta): dashed vertical lines labelled `S2`/`S3` at the sector-2/3 crossings.
+  The crossing distances are computed by intersecting the reference lap's GPS
+  path with the course's sector lines (`distanceAtLineCrossing`,
+  `CoachingReport.sectorBoundaries`).
+- The map's cause legend is now an interactive, larger set of buttons — tap a
+  cause to show/hide the corners attributed to it on the track map.
+
+### Changed
+
+- Corner notes are now **grouped by sector**: each sector shows its split
+  (time : delta vs best) as a header, with that sector's corner notes nested
+  below. This replaces the standalone "Sector deltas vs best" block and the flat
+  top-3 "Where you're losing time" list. Falls back to a flat list when the
+  course defines no sector boundaries.
+- The per-line `[GPS-derived, advisory]` tag on scrubbing / unused-grip notes is
+  gone; the advisory now lives once as a warning banner under the experimental
+  badge at the top of the panel.
+
 ## [0.3.0] - 2026-05-28
 
 ### Added

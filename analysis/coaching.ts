@@ -198,9 +198,9 @@ export function describeCornerInsight(insight: CornerInsight, useKph: boolean): 
       return `Corner ${corner}: losing ~${secs}s — your minimum speed here swings about ${swing} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.`;
     }
     case "scrubbing":
-      return `Corner ${corner}: losing ~${secs}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex. [GPS-derived, advisory]`;
+      return `Corner ${corner}: losing ~${secs}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex.`;
     case "unused_grip":
-      return `Corner ${corner}: losing ~${secs}s — apex looks under the grip limit (~${Math.round((insight.evidence.envelopeUtil ?? 0) * 100)}% of demonstrated), so there's room to carry more speed. [GPS-derived, advisory]`;
+      return `Corner ${corner}: losing ~${secs}s — apex looks under the grip limit (~${Math.round((insight.evidence.envelopeUtil ?? 0) * 100)}% of demonstrated), so there's room to carry more speed.`;
     case "low_min_speed":
       return insight.evidence.exitCritical
         ? `Corner ${corner}: losing ~${secs}s — about ${gap} less at the apex onto a straight, so it compounds down the following straight.`
