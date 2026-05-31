@@ -83,6 +83,12 @@ export interface RaceLineMapProps {
   height: number;
   /** Root causes toggled off in the legend — corners attributed to these are hidden. */
   hiddenCauses?: ReadonlySet<CornerRootCause>;
+  /** Draw the geometric-apex rings + apex-offset connectors (default true). */
+  showApex?: boolean;
+  /** Draw the corner exit points (default true). */
+  showExits?: boolean;
+  /** Draw the start/finish + sector boundary lines (default true). */
+  showSectors?: boolean;
 }
 
 function numberIcon(label: string, color: string): L.DivIcon {
@@ -94,7 +100,21 @@ function numberIcon(label: string, color: string): L.DivIcon {
   });
 }
 
-export function RaceLineMap({ samples, lap, corners, apex, exits, insights, course, useKph, height, hiddenCauses }: RaceLineMapProps) {
+export function RaceLineMap({
+  samples,
+  lap,
+  corners,
+  apex,
+  exits,
+  insights,
+  course,
+  useKph,
+  height,
+  hiddenCauses,
+  showApex = true,
+  showExits = true,
+  showSectors = true,
+}: RaceLineMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -143,8 +163,10 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
       const a = apexByCorner.get(corner.index);
       const exit = exitByCorner.get(corner.index);
       const insight = insightByCorner.get(corner.index);
-      // Legend toggle: drop corners whose attributed cause is hidden.
-      if (insight && hiddenCauses?.has(insight.rootCause)) continue;
+      // Legend toggle: drop corners whose bucket is hidden. Un-attributed
+      // (on-pace) corners fall in the "none" bucket so they can be hidden too.
+      const bucket: CornerRootCause = insight?.rootCause ?? "none";
+      if (hiddenCauses?.has(bucket)) continue;
       const style = cornerStyle(insight);
       const vMin = positionAtDistance(track, corner.apexDist);
 
@@ -181,7 +203,7 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
       }
 
       // Connector from V-Min to the geometric apex when the latter is well-defined.
-      if (a?.confident) {
+      if (showApex && a?.confident) {
         const geo = positionAtDistance(track, a.geoApexDist);
         L.polyline(
           [
@@ -216,7 +238,7 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
         .addTo(group);
 
       // Exit point: green when a straight follows (exit speed compounds there).
-      if (exit) {
+      if (showExits && exit) {
         const exitPos = positionAtDistance(track, corner.endDist);
         const color = exit.exitCritical ? EXIT_COLOR : EXIT_DULL;
         L.circleMarker([exitPos.lat, exitPos.lon], {
@@ -231,7 +253,7 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
       }
     }
 
-    if (course !== null) {
+    if (showSectors && course !== null) {
       L.polyline(
         [
           [course.startFinishA.lat, course.startFinishA.lon],
@@ -259,7 +281,7 @@ export function RaceLineMap({ samples, lap, corners, apex, exits, insights, cour
     }
 
     map.fitBounds(L.latLngBounds(latlngs), { padding: [24, 24] });
-  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses]);
+  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses, showApex, showExits, showSectors]);
 
   // Optional online tile background, under the race line.
   useEffect(() => {

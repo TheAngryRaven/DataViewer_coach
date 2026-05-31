@@ -13,8 +13,16 @@ import { UplotChart, verticalMarkersPlugin, type ChartMarker } from "./UplotChar
 import { RaceLineMap, CAUSE_COLOR, CAUSE_LABEL } from "./RaceLineMap";
 
 const CAUSE_LEGEND = (
-  ["low_min_speed", "scrubbing", "unused_grip", "inconsistent_apex", "corner_execution"] as const
+  ["low_min_speed", "scrubbing", "unused_grip", "inconsistent_apex", "corner_execution", "none"] as const
 ).map((cause) => ({ cause, color: CAUSE_COLOR[cause], label: CAUSE_LABEL[cause] }));
+
+/** Non-corner map overlays the driver can independently show/hide. */
+interface MapLayers {
+  apex: boolean;
+  exits: boolean;
+  sectors: boolean;
+}
+const DEFAULT_LAYERS: MapLayers = { apex: true, exits: true, sectors: true };
 
 // Full-bleed (chromeless) Stage-1 dashboard for the Coach tab. A thin view over
 // the pure `buildCoachingReport` analysis; no model, no network. Default-exported
@@ -31,6 +39,8 @@ export default function CoachDashboard(props: PluginPanelProps) {
   const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
   // Legend toggles: causes the driver has switched off are hidden on the map.
   const [hiddenCauses, setHiddenCauses] = useState<ReadonlySet<CornerRootCause>>(new Set());
+  // Independent show/hide for the non-corner map overlays.
+  const [layers, setLayers] = useState<MapLayers>(DEFAULT_LAYERS);
   const report = useMemo(
     () => buildCoachingReport({ ...props, cornerMethod }),
     [props, cornerMethod],
@@ -219,10 +229,12 @@ export default function CoachDashboard(props: PluginPanelProps) {
           <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
             Corners are coloured by attributed cause (dashed = low-confidence /
             advisory). Cyan ring = geometric apex · dashed purple = apex offset ·
-            green dot = exit onto a straight (grey = none). Tap a cause below to
-            show/hide it; click any marker; toggle a satellite background top-right.
+            green dot = exit onto a straight (grey = none). Tap a cause or overlay
+            below to show/hide it; click any marker; toggle a satellite background
+            top-right.
           </p>
           <CauseLegend hidden={hiddenCauses} onToggle={setHiddenCauses} />
+          <LayerToggles layers={layers} onChange={setLayers} />
           <RaceLineMap
             samples={data.samples}
             lap={bestLap}
@@ -234,6 +246,9 @@ export default function CoachDashboard(props: PluginPanelProps) {
             useKph={useKph}
             height={420}
             hiddenCauses={hiddenCauses}
+            showApex={layers.apex}
+            showExits={layers.exits}
+            showSectors={layers.sectors}
           />
         </Section>
       )}
@@ -589,6 +604,47 @@ function CauseLegend({
           >
             <span style={{ width: 14, height: 6, borderRadius: 2, background: entry.color }} />
             <span>{entry.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Show/hide the non-corner map overlays. Same button shape as the cause legend,
+// with a swatch echoing how each overlay is drawn on the map.
+function LayerToggles({ layers, onChange }: { layers: MapLayers; onChange: (next: MapLayers) => void }) {
+  const items: { key: keyof MapLayers; label: string; color: string }[] = [
+    { key: "apex", label: "Geometric apex", color: "#22d3ee" },
+    { key: "exits", label: "Exit points", color: "#22c55e" },
+    { key: "sectors", label: "Sector lines", color: "#e2e8f0" },
+  ];
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {items.map((item) => {
+        const on = layers[item.key];
+        return (
+          <button
+            key={item.key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange({ ...layers, [item.key]: !on })}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "5px 10px",
+              borderRadius: 6,
+              cursor: "pointer",
+              border: "1px solid rgba(127,127,127,0.3)",
+              background: on ? "rgba(127,127,127,0.12)" : "transparent",
+              color: "inherit",
+              fontSize: 13,
+              opacity: on ? 1 : 0.45,
+            }}
+          >
+            <span style={{ width: 12, height: 12, borderRadius: 999, border: `2px solid ${item.color}` }} />
+            <span>{item.label}</span>
           </button>
         );
       })}
