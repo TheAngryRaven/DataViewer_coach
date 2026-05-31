@@ -20,31 +20,49 @@ export interface ChartMarker {
 }
 
 /**
- * uPlot plugin that draws dashed vertical reference lines at fixed x-values —
- * used for sector boundaries on the distance-axis charts. Drawn in the `draw`
- * hook so the lines sit over the series but inside the plot area.
+ * uPlot plugin that draws bold dashed vertical reference lines at fixed x-values
+ * — used for sector boundaries on the distance-axis charts. Drawn in the `draw`
+ * hook so the lines sit over the series but inside the plot area. Sizes are
+ * scaled by `uPlot.pxRatio` so the line stays heavy on high-DPI screens, and
+ * each line carries a filled label chip so it reads on light or dark themes.
  */
 export function verticalMarkersPlugin(markers: ChartMarker[]): uPlot.Plugin {
+  const LINE = "#a855f7"; // vivid violet — distinct from the cyan/amber series
   return {
     hooks: {
       draw: (u: uPlot) => {
         if (markers.length === 0) return;
         const { ctx } = u;
-        const { top, height } = u.bbox;
+        const { left, top, width, height } = u.bbox;
+        const dpr = uPlot.pxRatio || 1;
         ctx.save();
-        ctx.strokeStyle = "rgba(148,163,184,0.7)";
-        ctx.fillStyle = "rgba(148,163,184,0.95)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.font = "600 10px sans-serif";
-        ctx.textBaseline = "top";
         for (const marker of markers) {
           const cx = Math.round(u.valToPos(marker.x, "x", true));
+          if (cx < left || cx > left + width) continue;
+
+          ctx.strokeStyle = LINE;
+          ctx.lineWidth = 2 * dpr;
+          ctx.setLineDash([7 * dpr, 5 * dpr]);
           ctx.beginPath();
           ctx.moveTo(cx, top);
           ctx.lineTo(cx, top + height);
           ctx.stroke();
-          ctx.fillText(marker.label, cx + 3, top + 2);
+
+          // Filled label chip at the top of the line.
+          ctx.setLineDash([]);
+          ctx.font = `700 ${11 * dpr}px sans-serif`;
+          ctx.textBaseline = "top";
+          const padX = 4 * dpr;
+          const padY = 2 * dpr;
+          const tw = ctx.measureText(marker.label).width;
+          const bw = tw + padX * 2;
+          const bh = 11 * dpr + padY * 2;
+          const bx = Math.min(cx + 3 * dpr, left + width - bw);
+          const by = top + 2 * dpr;
+          ctx.fillStyle = LINE;
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText(marker.label, bx + padX, by + padY);
         }
         ctx.restore();
       },

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Sector boundary markers on the charts are now much more prominent: a bold
+  dashed violet line with a filled `S2`/`S3` label chip, sized in device pixels
+  so they stay heavy on high-DPI screens and read on light or dark themes.
+
+### Added
+
+- The track map's "on pace" corners (no attributed cause) are now a sixth,
+  toggleable legend entry, so switching every cause off clears all corner
+  markers — previously un-attributed corners stayed on screen.
+- Map overlay toggles (geometric apex, exit points, sector lines) next to the
+  cause legend, so the apex rings, exit dots, and start/finish + sector lines
+  can each be shown/hidden independently. The base race line stays drawn (it's
+  the track outline itself).
+
 ## [0.4.0] - 2026-05-31
 
 ### Added
