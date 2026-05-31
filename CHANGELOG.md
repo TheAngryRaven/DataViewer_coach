@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-31
+
 ### Changed
 
 - Sector boundary markers on the charts are now much more prominent: a bold
