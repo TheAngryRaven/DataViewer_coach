@@ -110,5 +110,41 @@
     "brake": "freno",
     "rpm": "giri/min",
     "note": "Le letture di scrubbing / grip inutilizzato sono derivate dal GPS (g laterale ≈ v²·κ) e indicative; la confidenza è limitata dalla qualità del GPS. Un accelerometro montato sul telaio le affinerebbe — molti datalogger per kart montano il sensore sullo sterzo, il che non è ideale per questo."
+  },
+  "takeaway": {
+    "noLaps": "Ancora nessun giro completo da analizzare.",
+    "oneLap": "Per ora un solo giro pulito (migliore {{best}}) — falne qualcuno in più per leggere la costanza.",
+    "inconsistent": "Il passo c'è — giro migliore {{best}} — ma perdi ~{{gap}}s al giro per incostanza; sistemarla è il guadagno maggiore.",
+    "tight": "Sessione molto costante — giri entro ±{{stdev}}s l'uno dall'altro. Ora il tempo è nel passo, non nella costanza."
+  },
+  "insight": {
+    "inconsistent_apex": "Curva {{corner}}: perdi ~{{secs}}s — la tua velocità minima qui varia di circa {{swing}} (1 sigma) giro dopo giro. Ripetere la stessa traiettoria e velocità rende più che cercare altro passo.",
+    "scrubbing": "Curva {{corner}}: perdi ~{{secs}}s — stai grattando velocità nel punto lento (scivolando sotto carico laterale invece di scorrere). Probabilmente troppo sterzo / corda anticipata.",
+    "unused_grip": "Curva {{corner}}: perdi ~{{secs}}s — la corda sembra sotto il limite di aderenza (~{{util}}% del dimostrato), quindi c'è margine per portare più velocità.",
+    "low_min_speed": "Curva {{corner}}: perdi ~{{secs}}s — circa {{gap}} di velocità minima in meno rispetto al tuo migliore.",
+    "low_min_speed_exit": "Curva {{corner}}: perdi ~{{secs}}s — circa {{gap}} in meno alla corda verso un rettilineo, quindi si accumula lungo il rettilineo successivo.",
+    "corner_execution": "Curva {{corner}}: perdi ~{{secs}}s con la velocità di corda pari al tuo migliore — la perdita è in ingresso/traiettoria/uscita (servono più canali per individuarla).",
+    "none": "Curva {{corner}}: al tuo passo migliore."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI anteriore sinistro",
+      "psiFrontRight": "PSI anteriore destro",
+      "psiRearLeft": "PSI posteriore sinistro",
+      "psiRearRight": "PSI posteriore destro",
+      "tireWidthFrontLeft": "Larghezza gomma anteriore sinistra",
+      "tireWidthFrontRight": "Larghezza gomma anteriore destra",
+      "tireWidthRearLeft": "Larghezza gomma posteriore sinistra",
+      "tireWidthRearRight": "Larghezza gomma posteriore destra",
+      "tireDiameterFrontLeft": "Diametro gomma anteriore sinistra",
+      "tireDiameterFrontRight": "Diametro gomma anteriore destra",
+      "tireDiameterRearLeft": "Diametro gomma posteriore sinistra",
+      "tireDiameterRearRight": "Diametro gomma posteriore destra",
+      "tireBrand": "Marca gomme",
+      "unitSystem": "Sistema di unità",
+      "templateId": "Modello di assetto"
+    }
   }
 }

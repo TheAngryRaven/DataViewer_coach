@@ -1,4 +1,4 @@
-import { fastestLap, formatLapTimeMs } from "./insights";
+import { fastestLap } from "./insights";
 import type { Session, SessionLap } from "./session";
 
 // Pure, deterministic, local Stage-1 debrief. No model, no network. Everything
@@ -30,9 +30,22 @@ export interface SessionDebrief {
   theoreticalBestMs: number | null;
   topSpeedMph: number | null;
   topSpeedKph: number | null;
-  /** One plain-language line: the single most useful takeaway. */
-  takeaway: string;
+  /** The single most useful takeaway as a message descriptor; the panel phrases
+   *  + translates it (raw ms values stay unit/language-agnostic here). */
+  takeaway: TakeawayMessage;
 }
+
+/**
+ * The single most useful takeaway, as a discriminated message descriptor. The
+ * prose template lives in the `coach` i18n namespace (`takeaway.<key>`); the
+ * panel formats the raw ms values and translates. Keeping this structured (not a
+ * baked English string) is what lets the takeaway be localized + AI-rephrased.
+ */
+export type TakeawayMessage =
+  | { key: "noLaps" }
+  | { key: "oneLap"; bestMs: number }
+  | { key: "inconsistent"; bestMs: number; gapMs: number }
+  | { key: "tight"; stdevMs: number };
 
 /** Median of a non-empty list; NaN for an empty one. */
 export function median(values: number[]): number {
@@ -89,27 +102,25 @@ export function theoreticalBestMs(laps: SessionLap[]): number | null {
   return found ? total : null;
 }
 
-/** Pick the single most useful plain-language takeaway from the computed signals. */
+/** Pick the single most useful takeaway from the computed signals (as a message
+ *  descriptor — phrasing/formatting is the panel's job). */
 export function takeaway(
   best: SessionLap | null,
   validCount: number,
   stats: ConsistencyStats | null,
-): string {
-  if (best === null) return "No complete laps to analyse yet.";
-  const bestStr = formatLapTimeMs(best.lapTimeMs);
+): TakeawayMessage {
+  if (best === null) return { key: "noLaps" };
 
   if (stats === null || validCount < 2) {
-    return `One clean lap so far (best ${bestStr}) — bank a few more to read your consistency.`;
+    return { key: "oneLap", bestMs: best.lapTimeMs };
   }
 
   const gapMs = stats.meanMs - best.lapTimeMs;
   if (gapMs >= MEANINGFUL_GAP_MS) {
-    const gapStr = (gapMs / 1000).toFixed(1);
-    return `Your pace is there — best lap ${bestStr} — but you're losing ~${gapStr}s per lap to inconsistency; tightening that up is your biggest gain.`;
+    return { key: "inconsistent", bestMs: best.lapTimeMs, gapMs };
   }
 
-  const stdevStr = (stats.stdevMs / 1000).toFixed(2);
-  return `Tight session — laps within ±${stdevStr}s of each other. Pace, not consistency, is where the time is now.`;
+  return { key: "tight", stdevMs: stats.stdevMs };
 }
 
 /** Compute the full session-level debrief from the internal Session. */

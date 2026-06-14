@@ -82,23 +82,28 @@ describe("theoreticalBestMs", () => {
 });
 
 describe("takeaway", () => {
+  it("reports no laps when there is no best", () => {
+    expect(takeaway(null, 0, null)).toEqual({ key: "noLaps" });
+  });
+
   it("nudges for more laps when there is only one clean lap", () => {
-    const msg = takeaway(sLap(1, 62300), 1, null);
-    expect(msg).toContain("One clean lap");
-    expect(msg).toContain("1:02.300");
+    expect(takeaway(sLap(1, 62300), 1, null)).toEqual({ key: "oneLap", bestMs: 62300 });
   });
 
   it("leads with inconsistency when the average gap to best is meaningful", () => {
     const stats = consistency([62300, 63100, 63500]); // mean 62966, best 62300 -> gap ~0.7s
     const msg = takeaway(sLap(1, 62300), 3, stats);
-    expect(msg).toContain("inconsistency");
-    expect(msg).toContain("1:02.300");
+    expect(msg.key).toBe("inconsistent");
+    if (msg.key === "inconsistent") {
+      expect(msg.bestMs).toBe(62300);
+      expect(msg.gapMs).toBeGreaterThanOrEqual(250);
+    }
   });
 
   it("calls a tight session out when the gap is small", () => {
     const stats = consistency([62300, 62350, 62400]); // gap ~0.05s
     const msg = takeaway(sLap(1, 62300), 3, stats);
-    expect(msg).toContain("Tight session");
+    expect(msg.key).toBe("tight");
   });
 });
 
@@ -119,7 +124,8 @@ describe("buildDebrief", () => {
     expect(debrief.theoreticalBestMs).toBe(20000 + 21000 + 21300);
     expect(debrief.topSpeedMph).toBe(63.8);
     expect(debrief.topSpeedKph).toBe(102.7);
-    expect(debrief.takeaway).toContain("1:02.300");
+    // best 62300 vs valid mean ~62966 -> ~0.67s gap -> inconsistency takeaway.
+    expect(debrief.takeaway).toEqual({ key: "inconsistent", bestMs: 62300, gapMs: debrief.consistency!.meanMs - 62300 });
   });
 
   it("handles an empty session", () => {

@@ -110,5 +110,41 @@
     "brake": "freio",
     "rpm": "rpm",
     "note": "As leituras de scrubbing / grip não usado são derivadas do GPS (g lateral ≈ v²·κ) e indicativas; a confiança é limitada pela qualidade do GPS. Um acelerômetro montado no chassi as refinaria — muitos dataloggers de kart montam o sensor na direção, o que não é ideal para isso."
+  },
+  "takeaway": {
+    "noLaps": "Ainda não há voltas completas para analisar.",
+    "oneLap": "Uma volta limpa até agora (melhor {{best}}) — registre mais algumas para ler sua consistência.",
+    "inconsistent": "O ritmo está lá — melhor volta {{best}} — mas você perde ~{{gap}}s por volta por inconsistência; acertar isso é seu maior ganho.",
+    "tight": "Sessão muito consistente — voltas dentro de ±{{stdev}}s entre si. Agora o tempo está no ritmo, não na consistência."
+  },
+  "insight": {
+    "inconsistent_apex": "Curva {{corner}}: perdendo ~{{secs}}s — sua velocidade mínima aqui varia cerca de {{swing}} (1 sigma) de volta para volta. Repetir a mesma linha e velocidade rende mais que buscar mais ritmo.",
+    "scrubbing": "Curva {{corner}}: perdendo ~{{secs}}s — raspando velocidade no ponto lento (deslizando sob carga lateral em vez de rolar). Provavelmente esterço demais / ápice antecipado.",
+    "unused_grip": "Curva {{corner}}: perdendo ~{{secs}}s — o ápice parece abaixo do limite de aderência (~{{util}}% do demonstrado), então há margem para carregar mais velocidade.",
+    "low_min_speed": "Curva {{corner}}: perdendo ~{{secs}}s — cerca de {{gap}} de velocidade mínima a menos que sua melhor.",
+    "low_min_speed_exit": "Curva {{corner}}: perdendo ~{{secs}}s — cerca de {{gap}} a menos no ápice rumo a uma reta, então se acumula na reta seguinte.",
+    "corner_execution": "Curva {{corner}}: perdendo ~{{secs}}s com a velocidade de ápice igual à sua melhor — a perda está na entrada/linha/saída (precisa de mais canais para identificar).",
+    "none": "Curva {{corner}}: no seu melhor ritmo."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI dianteiro esquerdo",
+      "psiFrontRight": "PSI dianteiro direito",
+      "psiRearLeft": "PSI traseiro esquerdo",
+      "psiRearRight": "PSI traseiro direito",
+      "tireWidthFrontLeft": "Largura do pneu dianteiro esquerdo",
+      "tireWidthFrontRight": "Largura do pneu dianteiro direito",
+      "tireWidthRearLeft": "Largura do pneu traseiro esquerdo",
+      "tireWidthRearRight": "Largura do pneu traseiro direito",
+      "tireDiameterFrontLeft": "Diâmetro do pneu dianteiro esquerdo",
+      "tireDiameterFrontRight": "Diâmetro do pneu dianteiro direito",
+      "tireDiameterRearLeft": "Diâmetro do pneu traseiro esquerdo",
+      "tireDiameterRearRight": "Diâmetro do pneu traseiro direito",
+      "tireBrand": "Marca dos pneus",
+      "unitSystem": "Sistema de unidades",
+      "templateId": "Modelo de setup"
+    }
   }
 }

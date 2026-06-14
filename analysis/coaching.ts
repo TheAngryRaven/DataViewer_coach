@@ -9,8 +9,9 @@ import type { CornerGrip } from "./grip";
 // the contract a future AI coach reasons over — the model phrases and prioritizes
 // these records, it NEVER invents a number that isn't in `evidence`.
 //
-// Keep the record pure and unit-agnostic (no prose, no display units). Phrasing
-// lives in `describeCornerInsight`.
+// Keep the record pure and unit-agnostic (no prose, no display units). The
+// presentation layer (`cornerInsightMessage` + the panel's i18n) turns it into
+// a localized sentence.
 
 /**
  * Why a corner lost time. `scrubbing`/`unused_grip` come from the GPS-derived
@@ -175,39 +176,64 @@ export function buildCornerInsights(
 const MPS_TO_KPH = 3.6;
 const MPS_TO_MPH = 2.2369362920544;
 
+/** Which templated message an insight maps to. `low_min_speed` splits on whether
+ *  a straight follows (the loss compounds), matching the two phrasings. */
+export type CornerInsightKey =
+  | "inconsistent_apex"
+  | "scrubbing"
+  | "unused_grip"
+  | "low_min_speed"
+  | "low_min_speed_exit"
+  | "corner_execution"
+  | "none";
+
 /**
- * Free-tier templated phrasing of an insight record. Reads only the record's own
- * fields — adds no new numbers. An AI tier would replace this with richer
- * prose/prioritization over the exact same record.
+ * Interpolation values for an insight message. Numbers are formatted (the units
+ * are language-neutral); the prose template + translation live in the `coach`
+ * i18n namespace, so the panel renders `insight.<key>` with these params.
  */
-export function describeCornerInsight(insight: CornerInsight, useKph: boolean): string {
-  const corner = insight.cornerIndex + 1;
-  const secs = (insight.timeLostMs / 1000).toFixed(2);
-  const gap = formatSpeed(
-    insight.evidence.minSpeedGapMps * MPS_TO_MPH,
-    insight.evidence.minSpeedGapMps * MPS_TO_KPH,
-    useKph,
-  );
-  switch (insight.rootCause) {
-    case "inconsistent_apex": {
-      const swing = formatSpeed(
-        (insight.evidence.vMinStdevMps ?? 0) * MPS_TO_MPH,
-        (insight.evidence.vMinStdevMps ?? 0) * MPS_TO_KPH,
+export interface CornerInsightMessage {
+  key: CornerInsightKey;
+  params: {
+    /** 1-based corner number. */
+    corner: number;
+    /** Time lost, seconds, 2dp ("0.34"). */
+    secs: string;
+    /** Apex-speed deficit, formatted speed ("2.0 mph" / "3.2 km/h"). */
+    gap: string;
+    /** Lap-to-lap V-Min swing (1 sigma), formatted speed. */
+    swing: string;
+    /** Grip-envelope utilisation, whole percent. */
+    util: number;
+  };
+}
+
+/**
+ * Free-tier presentation of an insight record: picks the message key and formats
+ * its numbers (adding none). The prose template lives in the `coach` i18n
+ * namespace; the panel translates `insight.<key>` with these params. An AI tier
+ * would replace the template, not this record.
+ */
+export function cornerInsightMessage(insight: CornerInsight, useKph: boolean): CornerInsightMessage {
+  const { evidence } = insight;
+  const key: CornerInsightKey =
+    insight.rootCause === "low_min_speed"
+      ? evidence.exitCritical
+        ? "low_min_speed_exit"
+        : "low_min_speed"
+      : insight.rootCause;
+  return {
+    key,
+    params: {
+      corner: insight.cornerIndex + 1,
+      secs: (insight.timeLostMs / 1000).toFixed(2),
+      gap: formatSpeed(evidence.minSpeedGapMps * MPS_TO_MPH, evidence.minSpeedGapMps * MPS_TO_KPH, useKph),
+      swing: formatSpeed(
+        (evidence.vMinStdevMps ?? 0) * MPS_TO_MPH,
+        (evidence.vMinStdevMps ?? 0) * MPS_TO_KPH,
         useKph,
-      );
-      return `Corner ${corner}: losing ~${secs}s — your minimum speed here swings about ${swing} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.`;
-    }
-    case "scrubbing":
-      return `Corner ${corner}: losing ~${secs}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex.`;
-    case "unused_grip":
-      return `Corner ${corner}: losing ~${secs}s — apex looks under the grip limit (~${Math.round((insight.evidence.envelopeUtil ?? 0) * 100)}% of demonstrated), so there's room to carry more speed.`;
-    case "low_min_speed":
-      return insight.evidence.exitCritical
-        ? `Corner ${corner}: losing ~${secs}s — about ${gap} less at the apex onto a straight, so it compounds down the following straight.`
-        : `Corner ${corner}: losing ~${secs}s — about ${gap} less minimum speed than your best.`;
-    case "corner_execution":
-      return `Corner ${corner}: losing ~${secs}s with apex speed matching your best — the loss is in entry/line/exit (needs more channels to pin down).`;
-    case "none":
-      return `Corner ${corner}: on your best pace.`;
-  }
+      ),
+      util: Math.round((evidence.envelopeUtil ?? 0) * 100),
+    },
+  };
 }

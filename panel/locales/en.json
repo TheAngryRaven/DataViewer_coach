@@ -110,5 +110,41 @@
     "brake": "brake",
     "rpm": "rpm",
     "note": "Scrubbing / unused-grip reads are GPS-derived (lateral g ≈ v²·κ) and advisory; confidence is capped by GPS quality. A chassis-mounted accelerometer would sharpen them — many kart loggers mount the sensor on the steering, which isn't ideal for this."
+  },
+  "takeaway": {
+    "noLaps": "No complete laps to analyse yet.",
+    "oneLap": "One clean lap so far (best {{best}}) — bank a few more to read your consistency.",
+    "inconsistent": "Your pace is there — best lap {{best}} — but you're losing ~{{gap}}s per lap to inconsistency; tightening that up is your biggest gain.",
+    "tight": "Tight session — laps within ±{{stdev}}s of each other. Pace, not consistency, is where the time is now."
+  },
+  "insight": {
+    "inconsistent_apex": "Corner {{corner}}: losing ~{{secs}}s — your minimum speed here swings about {{swing}} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.",
+    "scrubbing": "Corner {{corner}}: losing ~{{secs}}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex.",
+    "unused_grip": "Corner {{corner}}: losing ~{{secs}}s — apex looks under the grip limit (~{{util}}% of demonstrated), so there's room to carry more speed.",
+    "low_min_speed": "Corner {{corner}}: losing ~{{secs}}s — about {{gap}} less minimum speed than your best.",
+    "low_min_speed_exit": "Corner {{corner}}: losing ~{{secs}}s — about {{gap}} less at the apex onto a straight, so it compounds down the following straight.",
+    "corner_execution": "Corner {{corner}}: losing ~{{secs}}s with apex speed matching your best — the loss is in entry/line/exit (needs more channels to pin down).",
+    "none": "Corner {{corner}}: on your best pace."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "Front-left PSI",
+      "psiFrontRight": "Front-right PSI",
+      "psiRearLeft": "Rear-left PSI",
+      "psiRearRight": "Rear-right PSI",
+      "tireWidthFrontLeft": "Front-left tire width",
+      "tireWidthFrontRight": "Front-right tire width",
+      "tireWidthRearLeft": "Rear-left tire width",
+      "tireWidthRearRight": "Rear-right tire width",
+      "tireDiameterFrontLeft": "Front-left tire diameter",
+      "tireDiameterFrontRight": "Front-right tire diameter",
+      "tireDiameterRearLeft": "Rear-left tire diameter",
+      "tireDiameterRearRight": "Rear-right tire diameter",
+      "tireBrand": "Tire brand",
+      "unitSystem": "Unit system",
+      "templateId": "Setup template"
+    }
   }
 }

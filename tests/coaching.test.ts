@@ -4,7 +4,7 @@ import type { CornerGrip } from "../analysis/grip";
 import {
   buildCornerInsights,
   cornerInsight,
-  describeCornerInsight,
+  cornerInsightMessage,
   type CornerInsight,
 } from "../analysis/coaching";
 
@@ -129,7 +129,7 @@ describe("buildCornerInsights", () => {
   });
 });
 
-describe("describeCornerInsight", () => {
+describe("cornerInsightMessage", () => {
   const base: CornerInsight = {
     cornerIndex: 3,
     apexDist: 0,
@@ -139,48 +139,44 @@ describe("describeCornerInsight", () => {
     evidence: { minSpeedGapMps: 0.894, exitCritical: true, apexOffsetM: null, vMinStdevMps: null, envelopeUtil: null },
   };
 
-  it("phrases an exit-critical min-speed loss with units, adding no new numbers", () => {
-    const mph = describeCornerInsight(base, false);
-    expect(mph).toContain("Corner 4");
-    expect(mph).toContain("0.34s");
-    expect(mph).toContain("2.0 mph"); // 0.894 m/s
-    expect(mph).toContain("compounds");
-    expect(describeCornerInsight(base, true)).toContain("3.2 km/h");
+  it("formats an exit-critical min-speed loss with 1-based corner + units, adding no new numbers", () => {
+    const mph = cornerInsightMessage(base, false);
+    expect(mph.key).toBe("low_min_speed_exit");
+    expect(mph.params.corner).toBe(4);
+    expect(mph.params.secs).toBe("0.34");
+    expect(mph.params.gap).toBe("2.0 mph"); // 0.894 m/s
+    expect(cornerInsightMessage(base, true).params.gap).toBe("3.2 km/h");
   });
 
-  it("phrases an inconsistent corner around the V-Min swing", () => {
-    const note = describeCornerInsight(
+  it("keys an inconsistent corner and formats the V-Min swing", () => {
+    const msg = cornerInsightMessage(
       { ...base, rootCause: "inconsistent_apex", evidence: { ...base.evidence, vMinStdevMps: 0.894 } },
       false,
     );
-    expect(note).toContain("swings about 2.0 mph");
-    expect(note).toContain("Repeating");
+    expect(msg.key).toBe("inconsistent_apex");
+    expect(msg.params.swing).toBe("2.0 mph");
   });
 
-  it("phrases grip-based reads without a per-line advisory tag (it lives in the header warning now)", () => {
-    const scrubbing = describeCornerInsight({ ...base, rootCause: "scrubbing" }, false);
-    expect(scrubbing).toContain("scrubbing speed");
-    expect(scrubbing).not.toContain("advisory");
-    const unused = describeCornerInsight(
+  it("keys grip-based reads and surfaces the envelope utilisation percent", () => {
+    expect(cornerInsightMessage({ ...base, rootCause: "scrubbing" }, false).key).toBe("scrubbing");
+    const unused = cornerInsightMessage(
       { ...base, rootCause: "unused_grip", evidence: { ...base.evidence, envelopeUtil: 0.6 } },
       false,
     );
-    expect(unused).toContain("60%");
-    expect(unused).not.toContain("advisory");
+    expect(unused.key).toBe("unused_grip");
+    expect(unused.params.util).toBe(60);
   });
 
-  it("is honest when the cause is unresolved", () => {
-    const note = describeCornerInsight({ ...base, rootCause: "corner_execution", confidence: "low" }, false);
-    expect(note).toContain("entry/line/exit");
-  });
-
-  it("phrases a non-exit min-speed loss and an on-pace corner", () => {
-    const offStraight = describeCornerInsight(
-      { ...base, evidence: { ...base.evidence, exitCritical: false } },
-      false,
+  it("keys an unresolved cause", () => {
+    expect(cornerInsightMessage({ ...base, rootCause: "corner_execution", confidence: "low" }, false).key).toBe(
+      "corner_execution",
     );
-    expect(offStraight).toContain("minimum speed");
-    expect(offStraight).not.toContain("compounds");
-    expect(describeCornerInsight({ ...base, rootCause: "none" }, false)).toContain("on your best pace");
+  });
+
+  it("distinguishes a non-exit min-speed loss and an on-pace corner", () => {
+    expect(cornerInsightMessage({ ...base, evidence: { ...base.evidence, exitCritical: false } }, false).key).toBe(
+      "low_min_speed",
+    );
+    expect(cornerInsightMessage({ ...base, rootCause: "none" }, false).key).toBe("none");
   });
 });

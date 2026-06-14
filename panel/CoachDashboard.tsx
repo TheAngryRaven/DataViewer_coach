@@ -5,16 +5,33 @@ import type { VehicleSetup } from "@/plugins/setup";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
 import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
+import { cornerInsightMessage } from "../analysis/coaching";
 import type { BrakingPoint, SectorDelta, ThrottlePoint } from "../analysis/segments";
+import type { TakeawayMessage } from "../analysis/debrief";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
-import { describeCornerInsight } from "../analysis/coaching";
-import { describeSetupChange } from "../analysis/setupDiff";
+import { setupChangeMessage } from "../analysis/setupDiff";
 import { UplotChart, verticalMarkersPlugin, type ChartMarker } from "./UplotChart";
 import { RaceLineMap, CAUSE_COLOR, CAUSE_KEYS } from "./RaceLineMap";
 import { useCoachT } from "./i18n";
 
 // Cause buckets in legend order; labels are resolved at render time via i18n.
 const CAUSE_LEGEND = CAUSE_KEYS.map((cause) => ({ cause, color: CAUSE_COLOR[cause] }));
+
+type CoachT = ReturnType<typeof useCoachT>;
+
+/** Phrase the structured session takeaway via i18n (analysis emits the descriptor). */
+function takeawayText(t: CoachT, m: TakeawayMessage): string {
+  switch (m.key) {
+    case "noLaps":
+      return t("takeaway.noLaps");
+    case "oneLap":
+      return t("takeaway.oneLap", { best: formatLapTimeMs(m.bestMs) });
+    case "inconsistent":
+      return t("takeaway.inconsistent", { best: formatLapTimeMs(m.bestMs), gap: (m.gapMs / 1000).toFixed(1) });
+    case "tight":
+      return t("takeaway.tight", { stdev: (m.stdevMs / 1000).toFixed(2) });
+  }
+}
 
 /** Non-corner map overlays the driver can independently show/hide. */
 interface MapLayers {
@@ -166,9 +183,17 @@ export default function CoachDashboard(props: PluginPanelProps) {
       {report.setupChanges.length > 0 && (
         <Section title={t("sections.setupChanges")}>
           <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
-            {report.setupChanges.map((change) => (
-              <li key={change.field}>{describeSetupChange(change)}</li>
-            ))}
+            {report.setupChanges.map((change) => {
+              const m = setupChangeMessage(change);
+              const label = m.labelKey ? t(`setup.fields.${m.labelKey}`) : m.label;
+              return (
+                <li key={change.field}>
+                  {m.delta !== null
+                    ? t("setup.changeLineDelta", { label, before: m.before, after: m.after, delta: m.delta })
+                    : t("setup.changeLine", { label, before: m.before, after: m.after })}
+                </li>
+              );
+            })}
           </ul>
         </Section>
       )}
@@ -280,7 +305,7 @@ function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }
           <Chip label={t("summary.topSpeed")} value={formatSpeed(debrief.topSpeedMph, debrief.topSpeedKph, useKph)} />
         )}
       </div>
-      <p style={{ margin: 0 }}>{debrief.takeaway}</p>
+      <p style={{ margin: 0 }}>{takeawayText(t, debrief.takeaway)}</p>
     </div>
   );
 }
@@ -558,9 +583,10 @@ function InsightRow({
   throttle: ThrottlePoint | undefined;
 }) {
   const t = useCoachT();
+  const message = cornerInsightMessage(insight, useKph);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <span>{describeCornerInsight(insight, useKph)}</span>
+      <span>{t(`insight.${message.key}`, message.params)}</span>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
         {t("breakdown.confidence", { level: insight.confidence })}
         {braking?.brakingDistanceM != null ? t("breakdown.braking", { meters: Math.round(braking.brakingDistanceM) }) : ""}

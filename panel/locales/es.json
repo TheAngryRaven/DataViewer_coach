@@ -110,5 +110,41 @@
     "brake": "freno",
     "rpm": "rpm",
     "note": "Las lecturas de arrastre / agarre sin usar se derivan de GPS (g lateral ≈ v²·κ) y son orientativas; la confianza está limitada por la calidad del GPS. Un acelerómetro montado en el chasis las afinaría — muchos data loggers de kart montan el sensor en la dirección, lo que no es ideal para esto."
+  },
+  "takeaway": {
+    "noLaps": "Aún no hay vueltas completas para analizar.",
+    "oneLap": "Una vuelta limpia por ahora (mejor {{best}}) — registra algunas más para leer tu consistencia.",
+    "inconsistent": "El ritmo está ahí — mejor vuelta {{best}} — pero pierdes ~{{gap}}s por vuelta por inconsistencia; ajustar eso es tu mayor ganancia.",
+    "tight": "Sesión muy pareja — vueltas dentro de ±{{stdev}}s entre sí. El tiempo ahora está en el ritmo, no en la consistencia."
+  },
+  "insight": {
+    "inconsistent_apex": "Curva {{corner}}: pierdes ~{{secs}}s — tu velocidad mínima aquí varía unos {{swing}} (1 sigma) de vuelta en vuelta. Repetir la misma línea y velocidad gana más que buscar más ritmo.",
+    "scrubbing": "Curva {{corner}}: pierdes ~{{secs}}s — arrastrando velocidad en el punto lento (deslizando bajo carga lateral en vez de rodar). Probablemente demasiado volante/vértice anticipado.",
+    "unused_grip": "Curva {{corner}}: pierdes ~{{secs}}s — el vértice parece por debajo del límite de agarre (~{{util}}% del demostrado), así que hay margen para llevar más velocidad.",
+    "low_min_speed": "Curva {{corner}}: pierdes ~{{secs}}s — unos {{gap}} menos de velocidad mínima que en tu mejor vuelta.",
+    "low_min_speed_exit": "Curva {{corner}}: pierdes ~{{secs}}s — unos {{gap}} menos en el vértice hacia una recta, así que se acumula por la recta siguiente.",
+    "corner_execution": "Curva {{corner}}: pierdes ~{{secs}}s con la velocidad de vértice igualando tu mejor vuelta — la pérdida está en entrada/línea/salida (hacen falta más canales para precisarlo).",
+    "none": "Curva {{corner}}: a tu mejor ritmo."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI delantero izquierdo",
+      "psiFrontRight": "PSI delantero derecho",
+      "psiRearLeft": "PSI trasero izquierdo",
+      "psiRearRight": "PSI trasero derecho",
+      "tireWidthFrontLeft": "Ancho neumático delantero izquierdo",
+      "tireWidthFrontRight": "Ancho neumático delantero derecho",
+      "tireWidthRearLeft": "Ancho neumático trasero izquierdo",
+      "tireWidthRearRight": "Ancho neumático trasero derecho",
+      "tireDiameterFrontLeft": "Diámetro neumático delantero izquierdo",
+      "tireDiameterFrontRight": "Diámetro neumático delantero derecho",
+      "tireDiameterRearLeft": "Diámetro neumático trasero izquierdo",
+      "tireDiameterRearRight": "Diámetro neumático trasero derecho",
+      "tireBrand": "Marca de neumáticos",
+      "unitSystem": "Sistema de unidades",
+      "templateId": "Plantilla de reglaje"
+    }
   }
 }
