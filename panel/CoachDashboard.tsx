@@ -10,9 +10,10 @@ import type { BrakingPoint, SectorDelta, ThrottlePoint } from "../analysis/segme
 import type { TakeawayMessage } from "../analysis/debrief";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
 import { setupChangeMessage } from "../analysis/setupDiff";
+import { formatDecimal, formatInteger } from "@/lib/i18n/format";
 import { UplotChart, verticalMarkersPlugin, type ChartMarker } from "./UplotChart";
 import { RaceLineMap, CAUSE_COLOR, CAUSE_KEYS } from "./RaceLineMap";
-import { useCoachT } from "./i18n";
+import { useCoachT, useCoachLocale } from "./i18n";
 
 // Cause buckets in legend order; labels are resolved at render time via i18n.
 const CAUSE_LEGEND = CAUSE_KEYS.map((cause) => ({ cause, color: CAUSE_COLOR[cause] }));
@@ -20,16 +21,19 @@ const CAUSE_LEGEND = CAUSE_KEYS.map((cause) => ({ cause, color: CAUSE_COLOR[caus
 type CoachT = ReturnType<typeof useCoachT>;
 
 /** Phrase the structured session takeaway via i18n (analysis emits the descriptor). */
-function takeawayText(t: CoachT, m: TakeawayMessage): string {
+function takeawayText(t: CoachT, locale: string, m: TakeawayMessage): string {
   switch (m.key) {
     case "noLaps":
       return t("takeaway.noLaps");
     case "oneLap":
-      return t("takeaway.oneLap", { best: formatLapTimeMs(m.bestMs) });
+      return t("takeaway.oneLap", { best: formatLapTimeMs(m.bestMs, locale) });
     case "inconsistent":
-      return t("takeaway.inconsistent", { best: formatLapTimeMs(m.bestMs), gap: (m.gapMs / 1000).toFixed(1) });
+      return t("takeaway.inconsistent", {
+        best: formatLapTimeMs(m.bestMs, locale),
+        gap: formatDecimal(m.gapMs / 1000, locale, 1),
+      });
     case "tight":
-      return t("takeaway.tight", { stdev: (m.stdevMs / 1000).toFixed(2) });
+      return t("takeaway.tight", { stdev: formatDecimal(m.stdevMs / 1000, locale, 2) });
   }
 }
 
@@ -53,6 +57,7 @@ const SUBJECT_STROKE = "#f59e0b";
 
 export default function CoachDashboard(props: PluginPanelProps) {
   const t = useCoachT();
+  const locale = useCoachLocale();
   const { data, laps, course, useKph } = props;
   const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
   // Legend toggles: causes the driver has switched off are hidden on the map.
@@ -72,7 +77,7 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   const referenceLabel =
     report.referenceSource === "snapshot" && report.snapshotReference
-      ? t("summary.referenceSnapshot", { time: formatLapTimeMs(report.snapshotReference.lapTimeMs) })
+      ? t("summary.referenceSnapshot", { time: formatLapTimeMs(report.snapshotReference.lapTimeMs, locale) })
       : t("summary.referenceBest", { lap: report.bestLapNumber ?? "?" });
 
   // Sector 2/3 boundary lines, shared across every distance-axis chart.
@@ -184,7 +189,7 @@ export default function CoachDashboard(props: PluginPanelProps) {
         <Section title={t("sections.setupChanges")}>
           <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
             {report.setupChanges.map((change) => {
-              const m = setupChangeMessage(change);
+              const m = setupChangeMessage(change, locale);
               const label = m.labelKey ? t(`setup.fields.${m.labelKey}`) : m.label;
               return (
                 <li key={change.field}>
@@ -245,7 +250,7 @@ export default function CoachDashboard(props: PluginPanelProps) {
                       : t("apex.offset", {
                           kind: a.kind === "early" ? t("apex.kindEarly") : t("apex.kindLate"),
                           sign: a.offsetM > 0 ? "+" : "-",
-                          meters: Math.abs(Math.round(a.offsetM)),
+                          meters: formatInteger(Math.abs(Math.round(a.offsetM)), locale),
                         })}
                   </span>
                 </div>
@@ -286,26 +291,27 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
 function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }) {
   const t = useCoachT();
+  const locale = useCoachLocale();
   const { debrief, baselineDeltaMs } = report;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         <Chip label={t("summary.laps")} value={debrief.validLaps < debrief.lapsAnalysed ? `${debrief.validLaps}/${debrief.lapsAnalysed}` : `${debrief.lapsAnalysed}`} />
-        {debrief.best && <Chip label={t("summary.best")} value={t("summary.bestValue", { time: formatLapTimeMs(debrief.best.lapTimeMs), lap: debrief.best.lapNumber })} />}
+        {debrief.best && <Chip label={t("summary.best")} value={t("summary.bestValue", { time: formatLapTimeMs(debrief.best.lapTimeMs, locale), lap: debrief.best.lapNumber })} />}
         {baselineDeltaMs !== null && (
           <Chip
             label={t("summary.vsBaseline")}
-            value={`${baselineDeltaMs >= 0 ? "+" : "-"}${Math.abs(baselineDeltaMs / 1000).toFixed(2)}s`}
+            value={`${baselineDeltaMs >= 0 ? "+" : "-"}${formatDecimal(Math.abs(baselineDeltaMs / 1000), locale, 2)}s`}
             valueColor={baselineDeltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE}
           />
         )}
-        {debrief.consistency && <Chip label={t("summary.consistency")} value={`±${(debrief.consistency.stdevMs / 1000).toFixed(2)}s`} />}
-        {debrief.theoreticalBestMs !== null && <Chip label={t("summary.theoretical")} value={formatLapTimeMs(debrief.theoreticalBestMs)} />}
+        {debrief.consistency && <Chip label={t("summary.consistency")} value={`±${formatDecimal(debrief.consistency.stdevMs / 1000, locale, 2)}s`} />}
+        {debrief.theoreticalBestMs !== null && <Chip label={t("summary.theoretical")} value={formatLapTimeMs(debrief.theoreticalBestMs, locale)} />}
         {debrief.topSpeedMph !== null && debrief.topSpeedKph !== null && (
-          <Chip label={t("summary.topSpeed")} value={formatSpeed(debrief.topSpeedMph, debrief.topSpeedKph, useKph)} />
+          <Chip label={t("summary.topSpeed")} value={formatSpeed(debrief.topSpeedMph, debrief.topSpeedKph, useKph, locale)} />
         )}
       </div>
-      <p style={{ margin: 0 }}>{takeawayText(t, debrief.takeaway)}</p>
+      <p style={{ margin: 0 }}>{takeawayText(t, locale, debrief.takeaway)}</p>
     </div>
   );
 }
@@ -316,6 +322,7 @@ function SnapshotBadge({
   reference: NonNullable<CoachingReport["snapshotReference"]>;
 }) {
   const t = useCoachT();
+  const locale = useCoachLocale();
   return (
     <div
       style={{
@@ -334,7 +341,7 @@ function SnapshotBadge({
       <span style={{ fontVariantNumeric: "tabular-nums" }}>
         {t("badges.comparedDetail", {
           engine: reference.engine,
-          time: formatLapTimeMs(reference.lapTimeMs),
+          time: formatLapTimeMs(reference.lapTimeMs, locale),
           track: reference.trackName,
           course: reference.courseName,
         })}
@@ -370,12 +377,13 @@ function BaselineSetupNote({ setup }: { setup: VehicleSetup }) {
 
 function DataQuality({ report }: { report: CoachingReport }) {
   const t = useCoachT();
+  const locale = useCoachLocale();
   const { capabilities, quality } = report;
   const parts = [
-    quality.sampleRateHz > 0 ? t("quality.rateHz", { hz: Math.round(quality.sampleRateHz) }) : t("quality.rateNa"),
+    quality.sampleRateHz > 0 ? t("quality.rateHz", { hz: formatInteger(Math.round(quality.sampleRateHz), locale) }) : t("quality.rateNa"),
     t("quality.gps", { level: quality.level }),
-    quality.hdop !== null ? t("quality.hdop", { value: quality.hdop.toFixed(1) }) : null,
-    quality.satellites !== null ? t("quality.sats", { count: Math.round(quality.satellites) }) : null,
+    quality.hdop !== null ? t("quality.hdop", { value: formatDecimal(quality.hdop, locale, 1) }) : null,
+    quality.satellites !== null ? t("quality.sats", { count: formatInteger(Math.round(quality.satellites), locale) }) : null,
     capabilities.measuredG ? t("quality.measuredG") : t("quality.derivedG"),
     capabilities.throttle ? t("quality.throttle") : null,
     capabilities.brake ? t("quality.brake") : null,
@@ -554,16 +562,17 @@ function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: b
 }
 
 function SectorHeader({ label, delta }: { label: string; delta: SectorDelta | null }) {
+  const locale = useCoachLocale();
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
       <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
       {delta && (
         <span className="text-muted-foreground" style={{ fontVariantNumeric: "tabular-nums", fontSize: 13 }}>
-          {formatLapTimeMs(delta.subjectMs)}
+          {formatLapTimeMs(delta.subjectMs, locale)}
           {" : "}
           <span style={{ color: delta.deltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE }}>
             {delta.deltaMs >= 0 ? "+" : "-"}
-            {Math.abs(delta.deltaMs / 1000).toFixed(2)}s
+            {formatDecimal(Math.abs(delta.deltaMs / 1000), locale, 2)}s
           </span>
         </span>
       )}
@@ -583,14 +592,15 @@ function InsightRow({
   throttle: ThrottlePoint | undefined;
 }) {
   const t = useCoachT();
-  const message = cornerInsightMessage(insight, useKph);
+  const locale = useCoachLocale();
+  const message = cornerInsightMessage(insight, useKph, locale);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <span>{t(`insight.${message.key}`, message.params)}</span>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
         {t("breakdown.confidence", { level: insight.confidence })}
-        {braking?.brakingDistanceM != null ? t("breakdown.braking", { meters: Math.round(braking.brakingDistanceM) }) : ""}
-        {throttle?.throttleDist != null ? t("breakdown.throttle", { meters: Math.round(throttle.throttleDist) }) : ""}
+        {braking?.brakingDistanceM != null ? t("breakdown.braking", { meters: formatInteger(Math.round(braking.brakingDistanceM), locale) }) : ""}
+        {throttle?.throttleDist != null ? t("breakdown.throttle", { meters: formatInteger(Math.round(throttle.throttleDist), locale) }) : ""}
       </span>
     </div>
   );

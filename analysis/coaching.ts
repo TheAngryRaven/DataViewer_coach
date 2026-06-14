@@ -1,4 +1,5 @@
 import { formatSpeed } from "./insights";
+import { formatDecimal } from "@/lib/i18n/format";
 import type { ApexOffset, CornerConsistency, CornerDelta, CornerExit } from "./segments";
 import type { CornerGrip } from "./grip";
 
@@ -214,7 +215,11 @@ export interface CornerInsightMessage {
  * namespace; the panel translates `insight.<key>` with these params. An AI tier
  * would replace the template, not this record.
  */
-export function cornerInsightMessage(insight: CornerInsight, useKph: boolean): CornerInsightMessage {
+export function cornerInsightMessage(
+  insight: CornerInsight,
+  useKph: boolean,
+  locale = "en",
+): CornerInsightMessage {
   const { evidence } = insight;
   const key: CornerInsightKey =
     insight.rootCause === "low_min_speed"
@@ -226,12 +231,13 @@ export function cornerInsightMessage(insight: CornerInsight, useKph: boolean): C
     key,
     params: {
       corner: insight.cornerIndex + 1,
-      secs: (insight.timeLostMs / 1000).toFixed(2),
-      gap: formatSpeed(evidence.minSpeedGapMps * MPS_TO_MPH, evidence.minSpeedGapMps * MPS_TO_KPH, useKph),
+      secs: formatDecimal(insight.timeLostMs / 1000, locale, 2),
+      gap: formatSpeed(evidence.minSpeedGapMps * MPS_TO_MPH, evidence.minSpeedGapMps * MPS_TO_KPH, useKph, locale),
       swing: formatSpeed(
         (evidence.vMinStdevMps ?? 0) * MPS_TO_MPH,
         (evidence.vMinStdevMps ?? 0) * MPS_TO_KPH,
         useKph,
+        locale,
       ),
       util: Math.round((evidence.envelopeUtil ?? 0) * 100),
     },

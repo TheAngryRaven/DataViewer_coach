@@ -6,7 +6,9 @@ import type { Corner } from "../analysis/corners";
 import type { ApexOffset, CornerExit } from "../analysis/segments";
 import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
 import { lapTrack, positionAtDistance } from "../analysis/distance";
-import { useCoachT } from "./i18n";
+import { formatSpeed } from "../analysis/insights";
+import { formatDecimal, formatInteger } from "@/lib/i18n/format";
+import { useCoachT, useCoachLocale } from "./i18n";
 
 // Offline-first race-line map. Draws the reference lap straight from GPS samples
 // (no tiles required) and overlays the detected corners and apex points so you
@@ -119,6 +121,7 @@ export function RaceLineMap({
   showSectors = true,
 }: RaceLineMapProps) {
   const t = useCoachT();
+  const locale = useCoachLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -160,8 +163,7 @@ export function RaceLineMap({
     const apexByCorner = new Map(apex.map((a) => [a.cornerIndex, a]));
     const exitByCorner = new Map(exits.map((e) => [e.cornerIndex, e]));
     const insightByCorner = new Map(insights.map((i) => [i.cornerIndex, i]));
-    const fmtSpeed = (mps: number) =>
-      useKph ? `${(mps * MPS_TO_KPH).toFixed(1)} km/h` : `${(mps * MPS_TO_MPH).toFixed(1)} mph`;
+    const fmtSpeed = (mps: number) => formatSpeed(mps * MPS_TO_MPH, mps * MPS_TO_KPH, useKph, locale);
 
     for (const corner of corners) {
       const a = apexByCorner.get(corner.index);
@@ -182,17 +184,17 @@ export function RaceLineMap({
             : ` · ${t("apex.offset", {
                 kind: a.kind === "early" ? t("apex.kindEarly") : t("apex.kindLate"),
                 sign: a.offsetM > 0 ? "+" : "-",
-                meters: Math.abs(Math.round(a.offsetM)),
+                meters: formatInteger(Math.abs(Math.round(a.offsetM)), locale),
               })}`;
       }
       let causeLine = "";
       if (insight) {
-        causeLine = `<br/><span style="color:${style.color}">&#9656; ${t(`causes.${insight.rootCause}`)}</span> ${t("map.causeMeta", { confidence: insight.confidence, seconds: (insight.timeLostMs / 1000).toFixed(2) })}`;
+        causeLine = `<br/><span style="color:${style.color}">&#9656; ${t(`causes.${insight.rootCause}`)}</span> ${t("map.causeMeta", { confidence: insight.confidence, seconds: formatDecimal(insight.timeLostMs / 1000, locale, 2) })}`;
       }
       let exitLine = "";
       if (exit) {
         exitLine = `<br/>${t("map.exit", { speed: fmtSpeed(exit.exitSpeedMps) })}`;
-        if (exit.exitCritical) exitLine += ` &rarr; ${t("map.exitStraight", { meters: Math.round(exit.followingStraightM) })}`;
+        if (exit.exitCritical) exitLine += ` &rarr; ${t("map.exitStraight", { meters: formatInteger(Math.round(exit.followingStraightM), locale) })}`;
       }
       const popup = `<strong>${header}</strong>${causeLine}<br/>${t("map.vMin", { speed: fmtSpeed(corner.minSpeedMps) })}${exitLine}`;
 
@@ -289,7 +291,7 @@ export function RaceLineMap({
     }
 
     map.fitBounds(L.latLngBounds(latlngs), { padding: [24, 24] });
-  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses, showApex, showExits, showSectors, t]);
+  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses, showApex, showExits, showSectors, t, locale]);
 
   // Optional online tile background, under the race line.
   useEffect(() => {
