@@ -110,5 +110,41 @@
     "brake": "frein",
     "rpm": "tr/min",
     "note": "Les lectures de ripage / grip inutilisé sont dérivées du GPS (g latéral ≈ v²·κ) et indicatives ; la confiance est plafonnée par la qualité du GPS. Un accéléromètre monté sur le châssis les affinerait — beaucoup de data loggers de karting montent le capteur sur la direction, ce qui n'est pas idéal ici."
+  },
+  "takeaway": {
+    "noLaps": "Aucun tour complet à analyser pour l'instant.",
+    "oneLap": "Un tour propre pour l'instant (meilleur {{best}}) — enchaînez-en quelques-uns pour lire votre régularité.",
+    "inconsistent": "Le rythme est là — meilleur tour {{best}} — mais vous perdez ~{{gap}}s par tour par manque de régularité ; resserrer ça est votre plus grand gain.",
+    "tight": "Session très régulière — tours à ±{{stdev}}s les uns des autres. Le temps est maintenant dans le rythme, pas la régularité."
+  },
+  "insight": {
+    "inconsistent_apex": "Virage {{corner}} : perte d'environ {{secs}}s — votre vitesse minimale ici varie d'environ {{swing}} (1 sigma) d'un tour à l'autre. Répéter la même trajectoire et la même vitesse rapporte plus que chercher plus de rythme.",
+    "scrubbing": "Virage {{corner}} : perte d'environ {{secs}}s — vous ripez au point lent (glissement sous charge latérale au lieu de rouler). Sans doute trop de braquage / corde anticipée.",
+    "unused_grip": "Virage {{corner}} : perte d'environ {{secs}}s — la corde semble sous la limite de grip (~{{util}}% du démontré), il y a donc de la marge pour porter plus de vitesse.",
+    "low_min_speed": "Virage {{corner}} : perte d'environ {{secs}}s — environ {{gap}} de vitesse minimale en moins que votre meilleur tour.",
+    "low_min_speed_exit": "Virage {{corner}} : perte d'environ {{secs}}s — environ {{gap}} en moins à la corde vers une ligne droite, donc ça s'accumule sur la droite suivante.",
+    "corner_execution": "Virage {{corner}} : perte d'environ {{secs}}s avec une vitesse de corde égale à votre meilleur tour — la perte est dans l'entrée/trajectoire/sortie (il faut plus de canaux pour la cerner).",
+    "none": "Virage {{corner}} : à votre meilleur rythme."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI avant gauche",
+      "psiFrontRight": "PSI avant droit",
+      "psiRearLeft": "PSI arrière gauche",
+      "psiRearRight": "PSI arrière droit",
+      "tireWidthFrontLeft": "Largeur pneu avant gauche",
+      "tireWidthFrontRight": "Largeur pneu avant droit",
+      "tireWidthRearLeft": "Largeur pneu arrière gauche",
+      "tireWidthRearRight": "Largeur pneu arrière droit",
+      "tireDiameterFrontLeft": "Diamètre pneu avant gauche",
+      "tireDiameterFrontRight": "Diamètre pneu avant droit",
+      "tireDiameterRearLeft": "Diamètre pneu arrière gauche",
+      "tireDiameterRearRight": "Diamètre pneu arrière droit",
+      "tireBrand": "Marque de pneus",
+      "unitSystem": "Système d'unités",
+      "templateId": "Modèle de réglage"
+    }
   }
 }

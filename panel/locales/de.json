@@ -110,5 +110,41 @@
     "brake": "Bremse",
     "rpm": "U/min",
     "note": "Scrubbing-/ungenutzter-Grip-Werte sind GPS-abgeleitet (Quer-g ≈ v²·κ) und Richtwerte; die Konfidenz wird durch die GPS-Qualität begrenzt. Ein am Chassis montierter Beschleunigungssensor würde sie schärfen — viele Kart-Datalogger montieren den Sensor an der Lenkung, was dafür nicht ideal ist."
+  },
+  "takeaway": {
+    "noLaps": "Noch keine vollständigen Runden zum Auswerten.",
+    "oneLap": "Erst eine saubere Runde (beste {{best}}) — fahr ein paar mehr, um deine Konstanz zu sehen.",
+    "inconsistent": "Das Tempo ist da — beste Runde {{best}} — aber du verlierst ~{{gap}}s pro Runde durch Inkonstanz; das zu straffen ist dein größter Gewinn.",
+    "tight": "Sehr konstante Session — Runden innerhalb von ±{{stdev}}s zueinander. Die Zeit liegt jetzt im Tempo, nicht in der Konstanz."
+  },
+  "insight": {
+    "inconsistent_apex": "Kurve {{corner}}: ~{{secs}}s Verlust — deine Mindestgeschwindigkeit schwankt hier um etwa {{swing}} (1 Sigma) von Runde zu Runde. Dieselbe Linie und Geschwindigkeit zu wiederholen bringt mehr, als mehr Tempo zu suchen.",
+    "scrubbing": "Kurve {{corner}}: ~{{secs}}s Verlust — du schiebst am langsamen Punkt Geschwindigkeit weg (Rutschen unter Querlast statt sauber durchrollen). Wahrscheinlich zu viel Lenkung / zu früher Scheitelpunkt.",
+    "unused_grip": "Kurve {{corner}}: ~{{secs}}s Verlust — der Scheitelpunkt liegt unter dem Grip-Limit (~{{util}}% des Gezeigten), es ist also Spielraum für mehr Geschwindigkeit.",
+    "low_min_speed": "Kurve {{corner}}: ~{{secs}}s Verlust — etwa {{gap}} weniger Mindestgeschwindigkeit als in deiner besten Runde.",
+    "low_min_speed_exit": "Kurve {{corner}}: ~{{secs}}s Verlust — etwa {{gap}} weniger am Scheitelpunkt vor einer Geraden, daher summiert es sich auf der folgenden Geraden.",
+    "corner_execution": "Kurve {{corner}}: ~{{secs}}s Verlust bei gleicher Scheitelpunktgeschwindigkeit wie in deiner besten Runde — der Verlust liegt in Einfahrt/Linie/Ausfahrt (mehr Kanäle nötig, um ihn einzugrenzen).",
+    "none": "Kurve {{corner}}: in deinem besten Tempo."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI vorne links",
+      "psiFrontRight": "PSI vorne rechts",
+      "psiRearLeft": "PSI hinten links",
+      "psiRearRight": "PSI hinten rechts",
+      "tireWidthFrontLeft": "Reifenbreite vorne links",
+      "tireWidthFrontRight": "Reifenbreite vorne rechts",
+      "tireWidthRearLeft": "Reifenbreite hinten links",
+      "tireWidthRearRight": "Reifenbreite hinten rechts",
+      "tireDiameterFrontLeft": "Reifendurchmesser vorne links",
+      "tireDiameterFrontRight": "Reifendurchmesser vorne rechts",
+      "tireDiameterRearLeft": "Reifendurchmesser hinten links",
+      "tireDiameterRearRight": "Reifendurchmesser hinten rechts",
+      "tireBrand": "Reifenmarke",
+      "unitSystem": "Einheitensystem",
+      "templateId": "Setup-Vorlage"
+    }
   }
 }

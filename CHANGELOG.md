@@ -21,13 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A maintainer translation-seed script (`npm run i18n:seed`, needs
   `ANTHROPIC_API_KEY`) plus a motorsport glossary, for re-translating new/changed
   keys without clobbering hand-reviewed strings. Not part of the app or CI.
+- The coaching prose generated inside `analysis/` is now translatable too,
+  completing the panel. The pure analysis layer emits structured message
+  descriptors instead of baked English: `debrief.takeaway` returns a
+  discriminated `TakeawayMessage`, `cornerInsightMessage` (replacing
+  `describeCornerInsight`) returns a message key + formatted params, and
+  `setupChangeMessage` (replacing `describeSetupChange`) plus a `labelKey` on
+  `SetupChange` carry stable keys. The panel translates these via new `takeaway`,
+  `insight`, and `setup` namespaces across all seven languages.
 
-### Notes
+### Changed
 
-- Coaching prose generated inside `analysis/` (`debrief.takeaway`,
-  `describeCornerInsight`, `describeSetupChange`) remains English for now; making
-  the pure analysis layer emit structured keys for the panel to translate is a
-  planned follow-up.
+- `analysis/` no longer bakes display prose: the takeaway / corner-insight /
+  setup-change producers emit structured, unit-agnostic descriptors and the panel
+  owns phrasing + translation. No metrics, thresholds, or numbers changed —
+  presentation only.
 
 ## [0.4.1] - 2026-05-31
 

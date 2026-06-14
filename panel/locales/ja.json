@@ -110,5 +110,41 @@
     "brake": "ブレーキ",
     "rpm": "rpm",
     "note": "スクラブ／未使用グリップの値はGPS由来（横g ≈ v²·κ）の参考値で、信頼度はGPS品質によって制限されます。シャーシ搭載の加速度センサーがあればより正確になります — 多くのカート用データロガーはセンサーをステアリングに取り付けますが、これはこの用途には理想的ではありません。"
+  },
+  "takeaway": {
+    "noLaps": "解析できる完全なラップがまだありません。",
+    "oneLap": "今のところクリーンラップは1周（ベスト {{best}}）— 一貫性を見るためにもう数周走りましょう。",
+    "inconsistent": "ペースはあります — ベストラップ {{best}} — ですが一貫性の不足で1周あたり約{{gap}}秒失っています。そこを詰めるのが最大の改善です。",
+    "tight": "非常に安定したセッション — 各ラップが互いに±{{stdev}}秒以内。いまタイムはペースにあり、一貫性ではありません。"
+  },
+  "insight": {
+    "inconsistent_apex": "コーナー {{corner}}：約{{secs}}秒のロス — ここの最低速度が周回ごとに約{{swing}}（1シグマ）ばらついています。同じラインと速度を再現するほうが、さらにペースを求めるより効果的です。",
+    "scrubbing": "コーナー {{corner}}：約{{secs}}秒のロス — スローポイントで速度を削っています（横荷重で転がさず滑っている）。おそらく切りすぎ／アペックスが早すぎです。",
+    "unused_grip": "コーナー {{corner}}：約{{secs}}秒のロス — アペックスがグリップ限界より下に見えます（実証値の約{{util}}%）。もっと速度を持ち込む余地があります。",
+    "low_min_speed": "コーナー {{corner}}：約{{secs}}秒のロス — ベストより最低速度が約{{gap}}低いです。",
+    "low_min_speed_exit": "コーナー {{corner}}：約{{secs}}秒のロス — ストレートに向かうアペックスで約{{gap}}低く、続くストレートで差が広がります。",
+    "corner_execution": "コーナー {{corner}}：約{{secs}}秒のロス、アペックス速度はベストと同等 — ロスは進入／ライン／立ち上がりにあります（特定にはさらにチャンネルが必要）。",
+    "none": "コーナー {{corner}}：ベストペースです。"
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI 左フロント",
+      "psiFrontRight": "PSI 右フロント",
+      "psiRearLeft": "PSI 左リア",
+      "psiRearRight": "PSI 右リア",
+      "tireWidthFrontLeft": "タイヤ幅 左フロント",
+      "tireWidthFrontRight": "タイヤ幅 右フロント",
+      "tireWidthRearLeft": "タイヤ幅 左リア",
+      "tireWidthRearRight": "タイヤ幅 右リア",
+      "tireDiameterFrontLeft": "タイヤ径 左フロント",
+      "tireDiameterFrontRight": "タイヤ径 右フロント",
+      "tireDiameterRearLeft": "タイヤ径 左リア",
+      "tireDiameterRearRight": "タイヤ径 右リア",
+      "tireBrand": "タイヤブランド",
+      "unitSystem": "単位系",
+      "templateId": "セットアップテンプレート"
+    }
   }
 }
