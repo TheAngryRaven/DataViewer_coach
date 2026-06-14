@@ -1,0 +1,114 @@
+{
+  "states": {
+    "loadSession": "Chargez une session pour commencer le coaching.",
+    "noLaps": "Aucun tour complet détecté pour l'instant."
+  },
+  "badges": {
+    "experimental": "Analyse expérimentale · bêta",
+    "experimentalCaption": "déterministe, sur l'appareil — les chiffres peuvent évoluer à mesure que l'analyse est affinée",
+    "advisory": "Dérivé du GPS · indicatif",
+    "advisoryCaption": "les lectures de ripage et de grip inutilisé proviennent d'un cercle de friction dérivé du GPS (g latéral ≈ v²·κ) — directionnelles, pas absolues ; un accéléromètre sur le châssis les affinerait",
+    "comparedAgainst": "Comparé à :",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Tours",
+    "best": "Meilleur",
+    "bestValue": "{{time}} (T{{lap}})",
+    "vsBaseline": "vs référence",
+    "consistency": "Régularité",
+    "theoretical": "Théorique",
+    "topSpeed": "Vitesse max",
+    "referenceSnapshot": "Instantané ({{time}})",
+    "referenceBest": "Meilleur (tour {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Changements de réglage depuis la base",
+    "latG": "G latéral (charge en virage)",
+    "speedTrace": "Courbe de vitesse",
+    "delta": "Où le temps se perd (delta au meilleur)",
+    "sectorBreakdown": "Où vous perdez du temps (par secteur)",
+    "apexLine": "Ligne de corde (V-Min vs corde géométrique)",
+    "trackMap": "Carte du circuit — virages et corde (meilleur tour {{lap}})",
+    "baselineSetup": "Réglage de base"
+  },
+  "baselineSetup": {
+    "note": "Figé depuis le tour de base — aucun réglage en direct n'est assigné, donc aucun écart n'est affiché.",
+    "tires": "pneus : {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Vitesse (V-Min)",
+    "curvature": "Courbure",
+    "cornerDetected": "{{count}} virage détecté",
+    "cornersDetected": "{{count}} virages détectés"
+  },
+  "chart": {
+    "distanceM": "Distance (m)",
+    "latG": "G latéral",
+    "speedAxis": "Vitesse ({{unit}})",
+    "lap": "Tour {{lap}}",
+    "deltaAxis": "Δ temps vs {{versus}} (s)",
+    "deltaSeries": "Tour {{lap}} vs {{versus}}",
+    "versusSnapshot": "instantané",
+    "versusBest": "meilleur"
+  },
+  "apex": {
+    "corner": "Virage {{corner}}",
+    "onApex": "à la corde",
+    "offset": "corde {{kind}} {{sign}}{{meters}} m",
+    "kindEarly": "anticipée",
+    "kindLate": "tardive"
+  },
+  "map": {
+    "legend": "Les virages sont colorés selon la cause attribuée (pointillés = faible confiance / indicatif). Anneau cyan = corde géométrique · violet pointillé = décalage de corde · point vert = sortie sur une ligne droite (gris = aucune). Touchez une cause ou un calque ci-dessous pour l'afficher/masquer ; cliquez sur n'importe quel repère ; activez un fond satellite en haut à droite.",
+    "tileOff": "Désactivé",
+    "tileMap": "Carte",
+    "tileSatellite": "Satellite",
+    "startFinish": "Départ / arrivée",
+    "sectorBoundary": "Limite de secteur {{label}}",
+    "geoApex": "Virage {{corner}} · corde géométrique (pic de courbure)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Sortie {{speed}}",
+    "exitStraight": "ligne droite {{meters}} m",
+    "causeMeta": "(confiance {{confidence}}, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Corde géométrique",
+    "exits": "Points de sortie",
+    "sectors": "Lignes de secteur"
+  },
+  "causes": {
+    "low_min_speed": "vitesse minimale faible",
+    "scrubbing": "ripage",
+    "unused_grip": "grip inutilisé",
+    "inconsistent_apex": "corde irrégulière",
+    "corner_execution": "exécution (trajectoire/freinage)",
+    "none": "au rythme"
+  },
+  "sectors": {
+    "s1": "Secteur 1",
+    "s2": "Secteur 2",
+    "s3": "Secteur 3"
+  },
+  "breakdown": {
+    "onBestPace": "À votre meilleur rythme ici.",
+    "confidence": "confiance : {{level}}",
+    "braking": " · freinage à {{meters}} m",
+    "throttle": " · réaccélération à {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "fréq. n/d",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} sat.",
+    "measuredG": "g mesuré",
+    "derivedG": "g dérivé du GPS",
+    "throttle": "accélérateur",
+    "brake": "frein",
+    "rpm": "tr/min",
+    "note": "Les lectures de ripage / grip inutilisé sont dérivées du GPS (g latéral ≈ v²·κ) et indicatives ; la confiance est plafonnée par la qualité du GPS. Un accéléromètre monté sur le châssis les affinerait — beaucoup de data loggers de karting montent le capteur sur la direction, ce qui n'est pas idéal ici."
+  }
+}

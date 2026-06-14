@@ -18,7 +18,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage:badge": "node scripts/coverage-badge.mjs",
-    "coverage:summary": "node scripts/coverage-summary.mjs"
+    "coverage:summary": "node scripts/coverage-summary.mjs",
+    "i18n:seed": "node scripts/seed-translations.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
@@ -28,9 +29,11 @@
     "@vitest/coverage-v8": "^3.0.0",
     "eslint": "^9.32.0",
     "globals": "^15.0.0",
+    "i18next": "^26.3.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
+    "react-i18next": "^17.0.8",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.0.0"
@@ -39,8 +42,10 @@
     "uplot": "^1.6.32"
   },
   "peerDependencies": {
+    "i18next": "^23.0.0 || ^24.0.0 || ^25.0.0 || ^26.0.0",
     "leaflet": "^1.9.4",
     "react": "^18.3 || ^19.0.0",
-    "react-dom": "^18.3 || ^19.0.0"
+    "react-dom": "^18.3 || ^19.0.0",
+    "react-i18next": "^15.0.0 || ^16.0.0 || ^17.0.0"
   }
 }

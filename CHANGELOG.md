@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The Coach panel is now translatable. A new plugin-local `coach` i18n namespace
+  (English bundled, `es`/`fr`/`de`/`it`/`pt-BR`/`ja` lazy-loaded from
+  `panel/locales/`) mirrors the host's plugin-local translation system: the
+  plugin registers its own translations via the host's `registerPluginLocale`
+  seam on `setup()` and stays fully self-contained. Static UI strings in the
+  dashboard and race-line map — section titles, badges, chips, toggles, legends,
+  chart axis/series labels, empty states, cause labels, map popup chrome and the
+  data-quality line — are migrated to keys, with a locale-parity test guarding
+  key/placeholder consistency across all seven languages.
+- A maintainer translation-seed script (`npm run i18n:seed`, needs
+  `ANTHROPIC_API_KEY`) plus a motorsport glossary, for re-translating new/changed
+  keys without clobbering hand-reviewed strings. Not part of the app or CI.
+
+### Notes
+
+- Coaching prose generated inside `analysis/` (`debrief.takeaway`,
+  `describeCornerInsight`, `describeSetupChange`) remains English for now; making
+  the pure analysis layer emit structured keys for the panel to translate is a
+  planned follow-up.
+
 ## [0.4.1] - 2026-05-31
 
 ### Changed

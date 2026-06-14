@@ -6,6 +6,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
@@ -17,6 +18,8 @@
     "plugins/**/*.ts",
     "types/**/*.ts",
     "analysis/**/*.ts",
+    "lib/**/*.ts",
+    "panel/**/*.ts",
     "panel/**/*.tsx",
     "tests/**/*.ts",
     "vitest.config.ts"

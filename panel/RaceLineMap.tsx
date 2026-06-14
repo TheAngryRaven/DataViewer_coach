@@ -6,6 +6,7 @@ import type { Corner } from "../analysis/corners";
 import type { ApexOffset, CornerExit } from "../analysis/segments";
 import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
 import { lapTrack, positionAtDistance } from "../analysis/distance";
+import { useCoachT } from "./i18n";
 
 // Offline-first race-line map. Draws the reference lap straight from GPS samples
 // (no tiles required) and overlays the detected corners and apex points so you
@@ -30,14 +31,16 @@ export const CAUSE_COLOR: Record<CornerRootCause, string> = {
   corner_execution: "#94a3b8",
   none: "#64748b",
 };
-export const CAUSE_LABEL: Record<CornerRootCause, string> = {
-  low_min_speed: "low minimum speed",
-  scrubbing: "scrubbing",
-  unused_grip: "unused grip",
-  inconsistent_apex: "inconsistent apex",
-  corner_execution: "execution (line/braking)",
-  none: "on pace",
-};
+// Cause buckets in legend order. Labels are translated at render time via the
+// `coach` i18n namespace (`causes.<key>`); only the colours live here.
+export const CAUSE_KEYS: readonly CornerRootCause[] = [
+  "low_min_speed",
+  "scrubbing",
+  "unused_grip",
+  "inconsistent_apex",
+  "corner_execution",
+  "none",
+];
 const NEUTRAL_CORNER = "#64748b";
 
 interface CornerStyle {
@@ -115,6 +118,7 @@ export function RaceLineMap({
   showExits = true,
   showSectors = true,
 }: RaceLineMapProps) {
+  const t = useCoachT();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
@@ -170,23 +174,27 @@ export function RaceLineMap({
       const style = cornerStyle(insight);
       const vMin = positionAtDistance(track, corner.apexDist);
 
-      let header = `Corner ${corner.index + 1}`;
+      let header = t("apex.corner", { corner: corner.index + 1 });
       if (a) {
         header +=
           a.kind === "on"
-            ? " · on the apex"
-            : ` · ${a.kind} apex ${a.offsetM > 0 ? "+" : "-"}${Math.abs(Math.round(a.offsetM))} m`;
+            ? ` · ${t("apex.onApex")}`
+            : ` · ${t("apex.offset", {
+                kind: a.kind === "early" ? t("apex.kindEarly") : t("apex.kindLate"),
+                sign: a.offsetM > 0 ? "+" : "-",
+                meters: Math.abs(Math.round(a.offsetM)),
+              })}`;
       }
       let causeLine = "";
       if (insight) {
-        causeLine = `<br/><span style="color:${style.color}">&#9656; ${CAUSE_LABEL[insight.rootCause]}</span> (${insight.confidence} confidence, +${(insight.timeLostMs / 1000).toFixed(2)}s)`;
+        causeLine = `<br/><span style="color:${style.color}">&#9656; ${t(`causes.${insight.rootCause}`)}</span> ${t("map.causeMeta", { confidence: insight.confidence, seconds: (insight.timeLostMs / 1000).toFixed(2) })}`;
       }
       let exitLine = "";
       if (exit) {
-        exitLine = `<br/>Exit ${fmtSpeed(exit.exitSpeedMps)}`;
-        if (exit.exitCritical) exitLine += ` &rarr; straight ${Math.round(exit.followingStraightM)} m`;
+        exitLine = `<br/>${t("map.exit", { speed: fmtSpeed(exit.exitSpeedMps) })}`;
+        if (exit.exitCritical) exitLine += ` &rarr; ${t("map.exitStraight", { meters: Math.round(exit.followingStraightM) })}`;
       }
-      const popup = `<strong>${header}</strong>${causeLine}<br/>V-Min ${fmtSpeed(corner.minSpeedMps)}${exitLine}`;
+      const popup = `<strong>${header}</strong>${causeLine}<br/>${t("map.vMin", { speed: fmtSpeed(corner.minSpeedMps) })}${exitLine}`;
 
       const segment = latlngs.filter(
         (_, i) => track.distances[i] >= corner.startDist && track.distances[i] <= corner.endDist,
@@ -219,7 +227,7 @@ export function RaceLineMap({
           fillColor: GEO_COLOR,
           fillOpacity: 0.25,
         })
-          .bindPopup(`Corner ${corner.index + 1} · geometric apex (curvature peak)`)
+          .bindPopup(t("map.geoApex", { corner: corner.index + 1 }))
           .addTo(group);
       }
 
@@ -261,7 +269,7 @@ export function RaceLineMap({
         ],
         { color: "#ffffff", weight: 2, dashArray: "6 4" },
       )
-        .bindPopup("Start / finish")
+        .bindPopup(t("map.startFinish"))
         .addTo(group);
       for (const [label, line] of [
         ["S2", course.sector2],
@@ -275,13 +283,13 @@ export function RaceLineMap({
           ],
           { color: "#ffffff", weight: 2, dashArray: "6 4" },
         )
-          .bindPopup(`Sector boundary ${label}`)
+          .bindPopup(t("map.sectorBoundary", { label }))
           .addTo(group);
       }
     }
 
     map.fitBounds(L.latLngBounds(latlngs), { padding: [24, 24] });
-  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses, showApex, showExits, showSectors]);
+  }, [samples, lap, corners, apex, exits, insights, course, useKph, hiddenCauses, showApex, showExits, showSectors, t]);
 
   // Optional online tile background, under the race line.
   useEffect(() => {
@@ -299,9 +307,9 @@ export function RaceLineMap({
   }, [tileMode]);
 
   const modes: { value: TileMode; label: string }[] = [
-    { value: "off", label: "Off" },
-    { value: "dark", label: "Map" },
-    { value: "satellite", label: "Satellite" },
+    { value: "off", label: t("map.tileOff") },
+    { value: "dark", label: t("map.tileMap") },
+    { value: "satellite", label: t("map.tileSatellite") },
   ];
 
   return (
