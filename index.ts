@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Gauge } from "lucide-react";
 import { PANELS_POINT, PanelSlot, type PluginPanel } from "@/plugins/panels";
 import type { DataViewerPlugin } from "@/plugins/types";
+import { registerCoachLocale } from "./panel/i18n";
 
 const plugin: DataViewerPlugin = {
   id: "ai-coaching",
@@ -9,6 +10,10 @@ const plugin: DataViewerPlugin = {
   version: "0.4.1",
   priority: 100, // overrides a public coach with the same id
   setup(ctx) {
+    // Register the plugin's own translations (English bundled, others lazy from
+    // ./panel/locales/) before the dashboard renders.
+    registerCoachLocale();
+
     ctx.registry.contribute(PANELS_POINT, {
       id: "ai-coaching",
       title: "AI Coaching",

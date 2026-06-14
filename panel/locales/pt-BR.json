@@ -1,0 +1,114 @@
+{
+  "states": {
+    "loadSession": "Carregue uma sessão para começar o coaching.",
+    "noLaps": "Nenhuma volta completa detectada ainda."
+  },
+  "badges": {
+    "experimental": "Análise experimental · beta",
+    "experimentalCaption": "determinística, no dispositivo — os números podem mudar conforme a análise é ajustada",
+    "advisory": "Derivado do GPS · indicativo",
+    "advisoryCaption": "as leituras de scrubbing e grip não usado vêm de um círculo de atrito derivado do GPS (g lateral ≈ v²·κ) — direcionais, não absolutas; um acelerômetro no chassi as refinaria",
+    "comparedAgainst": "Comparado com:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Voltas",
+    "best": "Melhor",
+    "bestValue": "{{time}} (V{{lap}})",
+    "vsBaseline": "vs base",
+    "consistency": "Consistência",
+    "theoretical": "Teórica",
+    "topSpeed": "Vel. máx.",
+    "referenceSnapshot": "Snapshot ({{time}})",
+    "referenceBest": "Melhor (volta {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Mudanças de setup desde a base",
+    "latG": "G lateral (carga em curva)",
+    "speedTrace": "Traçado de velocidade",
+    "delta": "Onde o tempo é perdido (delta para a melhor)",
+    "sectorBreakdown": "Onde você perde tempo (por setor)",
+    "apexLine": "Linha de ápice (V-Min vs ápice geométrico)",
+    "trackMap": "Mapa da pista — curvas e ápice (melhor volta {{lap}})",
+    "baselineSetup": "Setup base"
+  },
+  "baselineSetup": {
+    "note": "Congelado da volta base — nenhum setup ao vivo atribuído, então nenhuma diferença é mostrada.",
+    "tires": "pneus: {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Velocidade (V-Min)",
+    "curvature": "Curvatura",
+    "cornerDetected": "{{count}} curva detectada",
+    "cornersDetected": "{{count}} curvas detectadas"
+  },
+  "chart": {
+    "distanceM": "Distância (m)",
+    "latG": "G lateral",
+    "speedAxis": "Velocidade ({{unit}})",
+    "lap": "Volta {{lap}}",
+    "deltaAxis": "Δ tempo vs {{versus}} (s)",
+    "deltaSeries": "Volta {{lap}} vs {{versus}}",
+    "versusSnapshot": "snapshot",
+    "versusBest": "melhor"
+  },
+  "apex": {
+    "corner": "Curva {{corner}}",
+    "onApex": "no ápice",
+    "offset": "ápice {{kind}} {{sign}}{{meters}} m",
+    "kindEarly": "antecipado",
+    "kindLate": "tardio"
+  },
+  "map": {
+    "legend": "As curvas são coloridas pela causa atribuída (tracejada = baixa confiança / indicativo). Anel ciano = ápice geométrico · roxo tracejado = deslocamento do ápice · ponto verde = saída para uma reta (cinza = nenhuma). Toque em uma causa ou camada abaixo para mostrar/ocultar; clique em qualquer marcador; alterne um fundo de satélite no canto superior direito.",
+    "tileOff": "Desligado",
+    "tileMap": "Mapa",
+    "tileSatellite": "Satélite",
+    "startFinish": "Largada / chegada",
+    "sectorBoundary": "Limite de setor {{label}}",
+    "geoApex": "Curva {{corner}} · ápice geométrico (pico de curvatura)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Saída {{speed}}",
+    "exitStraight": "reta {{meters}} m",
+    "causeMeta": "({{confidence}} de confiança, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Ápice geométrico",
+    "exits": "Pontos de saída",
+    "sectors": "Linhas de setor"
+  },
+  "causes": {
+    "low_min_speed": "velocidade mínima baixa",
+    "scrubbing": "scrubbing",
+    "unused_grip": "grip não usado",
+    "inconsistent_apex": "ápice inconsistente",
+    "corner_execution": "execução (traçado/frenagem)",
+    "none": "no ritmo"
+  },
+  "sectors": {
+    "s1": "Setor 1",
+    "s2": "Setor 2",
+    "s3": "Setor 3"
+  },
+  "breakdown": {
+    "onBestPace": "No seu melhor ritmo por aqui.",
+    "confidence": "confiança: {{level}}",
+    "braking": " · freada a {{meters}} m",
+    "throttle": " · acelerar de novo a {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "taxa n/d",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} sat.",
+    "measuredG": "g medida",
+    "derivedG": "g derivada do GPS",
+    "throttle": "acelerador",
+    "brake": "freio",
+    "rpm": "rpm",
+    "note": "As leituras de scrubbing / grip não usado são derivadas do GPS (g lateral ≈ v²·κ) e indicativas; a confiança é limitada pela qualidade do GPS. Um acelerômetro montado no chassi as refinaria — muitos dataloggers de kart montam o sensor na direção, o que não é ideal para isso."
+  }
+}

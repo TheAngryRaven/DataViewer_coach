@@ -1,0 +1,114 @@
+{
+  "states": {
+    "loadSession": "Lade eine Session, um mit dem Coaching zu beginnen.",
+    "noLaps": "Noch keine vollständigen Runden erkannt."
+  },
+  "badges": {
+    "experimental": "Experimentelle Analyse · Beta",
+    "experimentalCaption": "deterministisch, auf dem Gerät — Werte können sich ändern, während die Analyse abgestimmt wird",
+    "advisory": "GPS-abgeleitet · Richtwert",
+    "advisoryCaption": "Scrubbing- und ungenutzter-Grip-Werte stammen aus einem GPS-abgeleiteten Reibungskreis (Quer-g ≈ v²·κ) — richtungsweisend, nicht absolut; ein Beschleunigungssensor am Chassis würde sie schärfen",
+    "comparedAgainst": "Verglichen mit:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Runden",
+    "best": "Beste",
+    "bestValue": "{{time}} (R{{lap}})",
+    "vsBaseline": "vs Basis",
+    "consistency": "Konstanz",
+    "theoretical": "Theoretisch",
+    "topSpeed": "Höchstgeschw.",
+    "referenceSnapshot": "Snapshot ({{time}})",
+    "referenceBest": "Beste (Runde {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Setup-Änderungen seit Basis",
+    "latG": "Quer-g (Kurvenlast)",
+    "speedTrace": "Geschwindigkeitsverlauf",
+    "delta": "Wo die Zeit verloren geht (Delta zur Besten)",
+    "sectorBreakdown": "Wo du Zeit verlierst (nach Sektor)",
+    "apexLine": "Scheitelpunktlinie (V-Min vs geometrischer Scheitelpunkt)",
+    "trackMap": "Streckenkarte — Kurven & Scheitelpunkt (beste Runde {{lap}})",
+    "baselineSetup": "Basis-Setup"
+  },
+  "baselineSetup": {
+    "note": "Eingefroren aus der Basisrunde — kein Live-Setup zugewiesen, daher wird kein Vergleich angezeigt.",
+    "tires": "Reifen: {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Geschwindigkeit (V-Min)",
+    "curvature": "Krümmung",
+    "cornerDetected": "{{count}} Kurve erkannt",
+    "cornersDetected": "{{count}} Kurven erkannt"
+  },
+  "chart": {
+    "distanceM": "Distanz (m)",
+    "latG": "Quer-g",
+    "speedAxis": "Geschwindigkeit ({{unit}})",
+    "lap": "Runde {{lap}}",
+    "deltaAxis": "Δ Zeit vs {{versus}} (s)",
+    "deltaSeries": "Runde {{lap}} vs {{versus}}",
+    "versusSnapshot": "Snapshot",
+    "versusBest": "Beste"
+  },
+  "apex": {
+    "corner": "Kurve {{corner}}",
+    "onApex": "am Scheitelpunkt",
+    "offset": "Scheitelpunkt {{kind}} {{sign}}{{meters}} m",
+    "kindEarly": "früh",
+    "kindLate": "spät"
+  },
+  "map": {
+    "legend": "Kurven sind nach zugeordneter Ursache eingefärbt (gestrichelt = geringe Konfidenz / Richtwert). Cyan-Ring = geometrischer Scheitelpunkt · gestrichelt violett = Scheitelpunkt-Versatz · grüner Punkt = Ausfahrt auf eine Gerade (grau = keine). Tippe unten auf eine Ursache oder Ebene zum Ein-/Ausblenden; klicke auf einen Marker; schalte oben rechts einen Satellitenhintergrund um.",
+    "tileOff": "Aus",
+    "tileMap": "Karte",
+    "tileSatellite": "Satellit",
+    "startFinish": "Start / Ziel",
+    "sectorBoundary": "Sektorgrenze {{label}}",
+    "geoApex": "Kurve {{corner}} · geometrischer Scheitelpunkt (Krümmungsspitze)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Ausfahrt {{speed}}",
+    "exitStraight": "Gerade {{meters}} m",
+    "causeMeta": "({{confidence}} Konfidenz, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Geometrischer Scheitelpunkt",
+    "exits": "Ausfahrtspunkte",
+    "sectors": "Sektorlinien"
+  },
+  "causes": {
+    "low_min_speed": "niedrige Mindestgeschwindigkeit",
+    "scrubbing": "Scrubbing",
+    "unused_grip": "ungenutzter Grip",
+    "inconsistent_apex": "inkonsistenter Scheitelpunkt",
+    "corner_execution": "Ausführung (Linie/Bremsen)",
+    "none": "im Tempo"
+  },
+  "sectors": {
+    "s1": "Sektor 1",
+    "s2": "Sektor 2",
+    "s3": "Sektor 3"
+  },
+  "breakdown": {
+    "onBestPace": "Hier in deinem besten Tempo.",
+    "confidence": "Konfidenz: {{level}}",
+    "braking": " · Bremsen {{meters}} m vorher",
+    "throttle": " · wieder Gas bei {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "Rate n/v",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} Sat.",
+    "measuredG": "gemessenes g",
+    "derivedG": "GPS-abgeleitetes g",
+    "throttle": "Gas",
+    "brake": "Bremse",
+    "rpm": "U/min",
+    "note": "Scrubbing-/ungenutzter-Grip-Werte sind GPS-abgeleitet (Quer-g ≈ v²·κ) und Richtwerte; die Konfidenz wird durch die GPS-Qualität begrenzt. Ein am Chassis montierter Beschleunigungssensor würde sie schärfen — viele Kart-Datalogger montieren den Sensor an der Lenkung, was dafür nicht ideal ist."
+  }
+}
