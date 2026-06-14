@@ -36,6 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   setup-change producers emit structured, unit-agnostic descriptors and the panel
   owns phrasing + translation. No metrics, thresholds, or numbers changed —
   presentation only.
+- Numbers shown in the Coach panel are now locale-aware. A new `lib/i18n/format.ts`
+  (pure `Intl` wrappers keyed off the active language, mirroring the host) renders
+  lap times, speeds, deltas, percentages, HDOP, distances and setup values with
+  the language's decimal/grouping separators (e.g. `1:23,456` / `62,1 mph` in
+  fr/de). The `insights` formatters and the `cornerInsightMessage` /
+  `setupChangeMessage` producers take an optional `locale` (default `en`, so
+  canonical output is unchanged); the panel threads `i18n.language` via a new
+  `useCoachLocale()` hook. uPlot axis tick labels are still rendered by the chart
+  library and are not yet localized.
 
 ## [0.4.1] - 2026-05-31
 

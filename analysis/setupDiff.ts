@@ -1,4 +1,5 @@
 import type { VehicleSetup } from "@/plugins/setup";
+import { formatNumber, formatSignedDelta } from "@/lib/i18n/format";
 
 // Setup-diff between the frozen baseline (snapshot.setup) and the live session
 // setup. Pure & deterministic; used to surface "what changed since the baseline
@@ -182,19 +183,21 @@ export interface SetupChangeMessage {
   delta: string | null;
 }
 
-/** Format a SetupChange into translation-ready display pieces (adds no prose). */
-export function setupChangeMessage(change: SetupChange): SetupChangeMessage {
+/** Render a value with its (language-neutral) unit suffix, localizing numbers. */
+function formatValue(value: string | number | null, unit: string, locale: string): string {
+  if (value === null) return "—";
+  return typeof value === "number" ? `${formatNumber(value, locale)}${unit}` : `${value}${unit}`;
+}
+
+/** Format a SetupChange into translation-ready display pieces (adds no prose).
+ *  Numbers follow `locale`; the unit suffix is appended verbatim. */
+export function setupChangeMessage(change: SetupChange, locale = "en"): SetupChangeMessage {
   const unit = change.unit ? ` ${change.unit}` : "";
-  const before = change.baseline === null ? "—" : `${change.baseline}${unit}`;
-  const after = change.current === null ? "—" : `${change.current}${unit}`;
-  let delta: string | null = null;
-  if (change.delta !== null) {
-    const sign = change.delta > 0 ? "+" : "";
-    // Trim trailing zeros on the delta so "1" stays "1" but "0.25" stays "0.25".
-    const deltaStr = Number.isInteger(change.delta)
-      ? `${change.delta}`
-      : change.delta.toFixed(2).replace(/\.?0+$/, "");
-    delta = `${sign}${deltaStr}`;
-  }
-  return { labelKey: change.labelKey, label: change.label, before, after, delta };
+  return {
+    labelKey: change.labelKey,
+    label: change.label,
+    before: formatValue(change.baseline, unit, locale),
+    after: formatValue(change.current, unit, locale),
+    delta: change.delta === null ? null : formatSignedDelta(change.delta, locale),
+  };
 }

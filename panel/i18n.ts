@@ -38,3 +38,9 @@ export function useCoachT(): (key: CoachKey, opts?: Record<string, unknown>) => 
   // directly assignable to it (no host type augmentation in this package).
   return t;
 }
+
+/** The active BCP-47 language tag, for locale-aware number formatting (see
+ *  lib/i18n/format). Re-renders on language change like the translator does. */
+export function useCoachLocale(): string {
+  return useTranslation(COACH_NS).i18n.language;
+}
