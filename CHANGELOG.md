@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-15
+
 ### Added
 
 - The Coach panel is now translatable. A new plugin-local `coach` i18n namespace

@@ -7,7 +7,7 @@ import { registerCoachLocale } from "./panel/i18n";
 const plugin: DataViewerPlugin = {
   id: "ai-coaching",
   name: "AI Coaching",
-  version: "0.4.1",
+  version: "0.5.0",
   priority: 100, // overrides a public coach with the same id
   setup(ctx) {
     // Register the plugin's own translations (English bundled, others lazy from
