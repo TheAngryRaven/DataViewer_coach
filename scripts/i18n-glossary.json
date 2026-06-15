@@ -1,0 +1,31 @@
+{
+  "_comment": "Glossary fed to the LLM by scripts/seed-translations.mjs. doNotTranslate terms must appear verbatim in every language (brand names, units, racing abbreviations, third-party names). notes give per-domain guidance so motorsport jargon is rendered idiomatically rather than literally.",
+  "doNotTranslate": [
+    "HackTheTrack.net",
+    "DovesDataViewer",
+    "PerchWerks LLC",
+    "GPS",
+    "HDOP",
+    "V-Min",
+    "PSI",
+    "FL",
+    "FR",
+    "RL",
+    "RR",
+    "Hz",
+    "mph",
+    "km/h",
+    "beta",
+    "g",
+    "κ",
+    "Δ"
+  ],
+  "notes": [
+    "This is an AI driving-coach panel for a motorsport telemetry app (karting, sim racing, track days). Use racing terminology a driver would recognise in the target language.",
+    "'lap' = a single time around the circuit; 'sector' = a timed segment of a lap; 'corner' = a turn; 'apex' = the clipping point of a corner; 'reference lap' = the lap others are compared against; 'V-Min' = the minimum (apex) speed in a corner.",
+    "'lateral g' / 'g' is cornering acceleration; keep the unit symbol 'g' verbatim. 'scrubbing' = tyres sliding/washing out; 'grip' = mechanical traction.",
+    "Keep UI text concise — these are headings, labels, chips and short map-popup fragments in a dense dashboard.",
+    "Preserve every {{placeholder}} exactly as written; do not translate, reorder, or add them. Keep adjacent placeholders adjacent (e.g. {{sign}}{{meters}}).",
+    "Preserve leading/trailing spaces and separators (e.g. the leading ' · ' on some fragments that are concatenated into a line)."
+  ]
+}

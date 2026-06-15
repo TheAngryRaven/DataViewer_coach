@@ -1,0 +1,150 @@
+{
+  "states": {
+    "loadSession": "Carga una sesión para empezar a entrenar.",
+    "noLaps": "Aún no se detectan vueltas completas."
+  },
+  "badges": {
+    "experimental": "Análisis experimental · beta",
+    "experimentalCaption": "determinista, en el dispositivo — las cifras pueden variar a medida que se ajusta el análisis",
+    "advisory": "Derivado de GPS · orientativo",
+    "advisoryCaption": "las lecturas de arrastre y agarre sin usar provienen de un círculo de fricción derivado de GPS (g lateral ≈ v²·κ) — direccionales, no absolutas; un acelerómetro en el chasis las afinaría",
+    "comparedAgainst": "Comparado con:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Vueltas",
+    "best": "Mejor",
+    "bestValue": "{{time}} (V{{lap}})",
+    "vsBaseline": "vs base",
+    "consistency": "Consistencia",
+    "theoretical": "Teórica",
+    "topSpeed": "Vel. máx.",
+    "referenceSnapshot": "Captura ({{time}})",
+    "referenceBest": "Mejor (vuelta {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Cambios de reglaje desde la base",
+    "latG": "G lateral (carga en curva)",
+    "speedTrace": "Trazado de velocidad",
+    "delta": "Dónde se pierde el tiempo (delta con la mejor)",
+    "sectorBreakdown": "Dónde pierdes tiempo (por sector)",
+    "apexLine": "Línea de vértice (V-Min vs vértice geométrico)",
+    "trackMap": "Mapa del circuito — curvas y vértice (mejor vuelta {{lap}})",
+    "baselineSetup": "Reglaje base"
+  },
+  "baselineSetup": {
+    "note": "Congelado de la vuelta base — no hay reglaje en vivo asignado, así que no se muestra diferencia.",
+    "tires": "neumáticos: {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Velocidad (V-Min)",
+    "curvature": "Curvatura",
+    "cornerDetected": "{{count}} curva detectada",
+    "cornersDetected": "{{count}} curvas detectadas"
+  },
+  "chart": {
+    "distanceM": "Distancia (m)",
+    "latG": "G lateral",
+    "speedAxis": "Velocidad ({{unit}})",
+    "lap": "Vuelta {{lap}}",
+    "deltaAxis": "Δ tiempo vs {{versus}} (s)",
+    "deltaSeries": "Vuelta {{lap}} vs {{versus}}",
+    "versusSnapshot": "captura",
+    "versusBest": "mejor"
+  },
+  "apex": {
+    "corner": "Curva {{corner}}",
+    "onApex": "en el vértice",
+    "offset": "vértice {{kind}} {{sign}}{{meters}} m",
+    "kindEarly": "temprano",
+    "kindLate": "tardío"
+  },
+  "map": {
+    "legend": "Las curvas se colorean según la causa atribuida (discontinua = baja confianza / orientativo). Anillo cian = vértice geométrico · púrpura discontinua = desfase del vértice · punto verde = salida hacia una recta (gris = ninguna). Toca una causa o capa abajo para mostrar/ocultar; haz clic en cualquier marcador; activa un fondo de satélite arriba a la derecha.",
+    "tileOff": "Apagado",
+    "tileMap": "Mapa",
+    "tileSatellite": "Satélite",
+    "startFinish": "Salida / meta",
+    "sectorBoundary": "Límite de sector {{label}}",
+    "geoApex": "Curva {{corner}} · vértice geométrico (pico de curvatura)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Salida {{speed}}",
+    "exitStraight": "recta {{meters}} m",
+    "causeMeta": "({{confidence}} de confianza, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Vértice geométrico",
+    "exits": "Puntos de salida",
+    "sectors": "Líneas de sector"
+  },
+  "causes": {
+    "low_min_speed": "velocidad mínima baja",
+    "scrubbing": "arrastre",
+    "unused_grip": "agarre sin usar",
+    "inconsistent_apex": "vértice inconsistente",
+    "corner_execution": "ejecución (trazada/frenada)",
+    "none": "en ritmo"
+  },
+  "sectors": {
+    "s1": "Sector 1",
+    "s2": "Sector 2",
+    "s3": "Sector 3"
+  },
+  "breakdown": {
+    "onBestPace": "En tu mejor ritmo por aquí.",
+    "confidence": "confianza: {{level}}",
+    "braking": " · frenada a {{meters}} m",
+    "throttle": " · acelerador de nuevo a {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "frec. n/d",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} sat.",
+    "measuredG": "g medida",
+    "derivedG": "g derivada de GPS",
+    "throttle": "acelerador",
+    "brake": "freno",
+    "rpm": "rpm",
+    "note": "Las lecturas de arrastre / agarre sin usar se derivan de GPS (g lateral ≈ v²·κ) y son orientativas; la confianza está limitada por la calidad del GPS. Un acelerómetro montado en el chasis las afinaría — muchos data loggers de kart montan el sensor en la dirección, lo que no es ideal para esto."
+  },
+  "takeaway": {
+    "noLaps": "Aún no hay vueltas completas para analizar.",
+    "oneLap": "Una vuelta limpia por ahora (mejor {{best}}) — registra algunas más para leer tu consistencia.",
+    "inconsistent": "El ritmo está ahí — mejor vuelta {{best}} — pero pierdes ~{{gap}}s por vuelta por inconsistencia; ajustar eso es tu mayor ganancia.",
+    "tight": "Sesión muy pareja — vueltas dentro de ±{{stdev}}s entre sí. El tiempo ahora está en el ritmo, no en la consistencia."
+  },
+  "insight": {
+    "inconsistent_apex": "Curva {{corner}}: pierdes ~{{secs}}s — tu velocidad mínima aquí varía unos {{swing}} (1 sigma) de vuelta en vuelta. Repetir la misma línea y velocidad gana más que buscar más ritmo.",
+    "scrubbing": "Curva {{corner}}: pierdes ~{{secs}}s — arrastrando velocidad en el punto lento (deslizando bajo carga lateral en vez de rodar). Probablemente demasiado volante/vértice anticipado.",
+    "unused_grip": "Curva {{corner}}: pierdes ~{{secs}}s — el vértice parece por debajo del límite de agarre (~{{util}}% del demostrado), así que hay margen para llevar más velocidad.",
+    "low_min_speed": "Curva {{corner}}: pierdes ~{{secs}}s — unos {{gap}} menos de velocidad mínima que en tu mejor vuelta.",
+    "low_min_speed_exit": "Curva {{corner}}: pierdes ~{{secs}}s — unos {{gap}} menos en el vértice hacia una recta, así que se acumula por la recta siguiente.",
+    "corner_execution": "Curva {{corner}}: pierdes ~{{secs}}s con la velocidad de vértice igualando tu mejor vuelta — la pérdida está en entrada/línea/salida (hacen falta más canales para precisarlo).",
+    "none": "Curva {{corner}}: a tu mejor ritmo."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI delantero izquierdo",
+      "psiFrontRight": "PSI delantero derecho",
+      "psiRearLeft": "PSI trasero izquierdo",
+      "psiRearRight": "PSI trasero derecho",
+      "tireWidthFrontLeft": "Ancho neumático delantero izquierdo",
+      "tireWidthFrontRight": "Ancho neumático delantero derecho",
+      "tireWidthRearLeft": "Ancho neumático trasero izquierdo",
+      "tireWidthRearRight": "Ancho neumático trasero derecho",
+      "tireDiameterFrontLeft": "Diámetro neumático delantero izquierdo",
+      "tireDiameterFrontRight": "Diámetro neumático delantero derecho",
+      "tireDiameterRearLeft": "Diámetro neumático trasero izquierdo",
+      "tireDiameterRearRight": "Diámetro neumático trasero derecho",
+      "tireBrand": "Marca de neumáticos",
+      "unitSystem": "Sistema de unidades",
+      "templateId": "Plantilla de reglaje"
+    }
+  }
+}

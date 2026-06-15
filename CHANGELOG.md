@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-15
+
+### Added
+
+- The Coach panel is now translatable. A new plugin-local `coach` i18n namespace
+  (English bundled, `es`/`fr`/`de`/`it`/`pt-BR`/`ja` lazy-loaded from
+  `panel/locales/`) mirrors the host's plugin-local translation system: the
+  plugin registers its own translations via the host's `registerPluginLocale`
+  seam on `setup()` and stays fully self-contained. Static UI strings in the
+  dashboard and race-line map — section titles, badges, chips, toggles, legends,
+  chart axis/series labels, empty states, cause labels, map popup chrome and the
+  data-quality line — are migrated to keys, with a locale-parity test guarding
+  key/placeholder consistency across all seven languages.
+- A maintainer translation-seed script (`npm run i18n:seed`, needs
+  `ANTHROPIC_API_KEY`) plus a motorsport glossary, for re-translating new/changed
+  keys without clobbering hand-reviewed strings. Not part of the app or CI.
+- The coaching prose generated inside `analysis/` is now translatable too,
+  completing the panel. The pure analysis layer emits structured message
+  descriptors instead of baked English: `debrief.takeaway` returns a
+  discriminated `TakeawayMessage`, `cornerInsightMessage` (replacing
+  `describeCornerInsight`) returns a message key + formatted params, and
+  `setupChangeMessage` (replacing `describeSetupChange`) plus a `labelKey` on
+  `SetupChange` carry stable keys. The panel translates these via new `takeaway`,
+  `insight`, and `setup` namespaces across all seven languages.
+
+### Changed
+
+- `analysis/` no longer bakes display prose: the takeaway / corner-insight /
+  setup-change producers emit structured, unit-agnostic descriptors and the panel
+  owns phrasing + translation. No metrics, thresholds, or numbers changed —
+  presentation only.
+- Numbers shown in the Coach panel are now locale-aware. A new `lib/i18n/format.ts`
+  (pure `Intl` wrappers keyed off the active language, mirroring the host) renders
+  lap times, speeds, deltas, percentages, HDOP, distances and setup values with
+  the language's decimal/grouping separators (e.g. `1:23,456` / `62,1 mph` in
+  fr/de). The `insights` formatters and the `cornerInsightMessage` /
+  `setupChangeMessage` producers take an optional `locale` (default `en`, so
+  canonical output is unchanged); the panel threads `i18n.language` via a new
+  `useCoachLocale()` hook. uPlot axis tick labels are still rendered by the chart
+  library and are not yet localized.
+
 ## [0.4.1] - 2026-05-31
 
 ### Changed

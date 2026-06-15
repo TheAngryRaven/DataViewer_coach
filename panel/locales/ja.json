@@ -1,0 +1,150 @@
+{
+  "states": {
+    "loadSession": "コーチングを始めるにはセッションを読み込んでください。",
+    "noLaps": "完全なラップはまだ検出されていません。"
+  },
+  "badges": {
+    "experimental": "実験的な解析 · ベータ",
+    "experimentalCaption": "デバイス上で決定論的に処理 — 解析の調整に伴い数値は変わる場合があります",
+    "advisory": "GPS由来 · 参考値",
+    "advisoryCaption": "スクラブと未使用グリップの値はGPS由来の摩擦円（横g ≈ v²·κ）から算出した参考値で、方向性を示すもので絶対値ではありません。シャーシ搭載の加速度センサーがあればより正確になります",
+    "comparedAgainst": "比較対象:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "ラップ",
+    "best": "ベスト",
+    "bestValue": "{{time}}（L{{lap}}）",
+    "vsBaseline": "基準との差",
+    "consistency": "一貫性",
+    "theoretical": "理論値",
+    "topSpeed": "最高速",
+    "referenceSnapshot": "スナップショット（{{time}}）",
+    "referenceBest": "ベスト（ラップ {{lap}}）"
+  },
+  "sections": {
+    "setupChanges": "基準からのセットアップ変更",
+    "latG": "横g（コーナリング負荷）",
+    "speedTrace": "速度トレース",
+    "delta": "タイムロスの箇所（ベストとの差）",
+    "sectorBreakdown": "タイムを失っている箇所（セクター別）",
+    "apexLine": "アペックスライン（V-Min と幾何学的アペックス）",
+    "trackMap": "コースマップ — コーナーとアペックス（ベストラップ {{lap}}）",
+    "baselineSetup": "基準セットアップ"
+  },
+  "baselineSetup": {
+    "note": "基準ラップから固定 — ライブのセットアップが割り当てられていないため、差分は表示されません。",
+    "tires": "タイヤ: {{brand}}",
+    "psiAll": "PSI {{values}}（FL / FR / RL / RR）",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "速度（V-Min）",
+    "curvature": "曲率",
+    "cornerDetected": "{{count}} コーナーを検出",
+    "cornersDetected": "{{count}} コーナーを検出"
+  },
+  "chart": {
+    "distanceM": "距離（m）",
+    "latG": "横g",
+    "speedAxis": "速度（{{unit}}）",
+    "lap": "ラップ {{lap}}",
+    "deltaAxis": "Δタイム {{versus}}比（s）",
+    "deltaSeries": "ラップ {{lap}} vs {{versus}}",
+    "versusSnapshot": "スナップショット",
+    "versusBest": "ベスト"
+  },
+  "apex": {
+    "corner": "コーナー {{corner}}",
+    "onApex": "アペックス上",
+    "offset": "{{kind}}アペックス {{sign}}{{meters}} m",
+    "kindEarly": "早い",
+    "kindLate": "遅い"
+  },
+  "map": {
+    "legend": "コーナーは推定された原因で色分けされています（破線 = 低信頼度／参考値）。シアンのリング = 幾何学的アペックス · 紫の破線 = アペックスのずれ · 緑の点 = ストレートへの立ち上がり（グレー = なし）。下の原因やレイヤーをタップして表示／非表示を切り替え、マーカーをクリック、右上で衛星背景を切り替えできます。",
+    "tileOff": "オフ",
+    "tileMap": "地図",
+    "tileSatellite": "衛星",
+    "startFinish": "スタート／フィニッシュ",
+    "sectorBoundary": "セクター境界 {{label}}",
+    "geoApex": "コーナー {{corner}} · 幾何学的アペックス（曲率ピーク）",
+    "vMin": "V-Min {{speed}}",
+    "exit": "立ち上がり {{speed}}",
+    "exitStraight": "ストレート {{meters}} m",
+    "causeMeta": "（信頼度 {{confidence}}、+{{seconds}}s）"
+  },
+  "layers": {
+    "apex": "幾何学的アペックス",
+    "exits": "立ち上がり地点",
+    "sectors": "セクターライン"
+  },
+  "causes": {
+    "low_min_speed": "最低速度が低い",
+    "scrubbing": "スクラブ",
+    "unused_grip": "未使用グリップ",
+    "inconsistent_apex": "アペックスが不安定",
+    "corner_execution": "操作（ライン／ブレーキング）",
+    "none": "ペース通り"
+  },
+  "sectors": {
+    "s1": "セクター 1",
+    "s2": "セクター 2",
+    "s3": "セクター 3"
+  },
+  "breakdown": {
+    "onBestPace": "ここはベストペースです。",
+    "confidence": "信頼度: {{level}}",
+    "braking": " · ブレーキング {{meters}} m手前",
+    "throttle": " · {{meters}} mで再加速"
+  },
+  "quality": {
+    "rateNa": "レート不明",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} 衛星",
+    "measuredG": "実測g",
+    "derivedG": "GPS由来g",
+    "throttle": "スロットル",
+    "brake": "ブレーキ",
+    "rpm": "rpm",
+    "note": "スクラブ／未使用グリップの値はGPS由来（横g ≈ v²·κ）の参考値で、信頼度はGPS品質によって制限されます。シャーシ搭載の加速度センサーがあればより正確になります — 多くのカート用データロガーはセンサーをステアリングに取り付けますが、これはこの用途には理想的ではありません。"
+  },
+  "takeaway": {
+    "noLaps": "解析できる完全なラップがまだありません。",
+    "oneLap": "今のところクリーンラップは1周（ベスト {{best}}）— 一貫性を見るためにもう数周走りましょう。",
+    "inconsistent": "ペースはあります — ベストラップ {{best}} — ですが一貫性の不足で1周あたり約{{gap}}秒失っています。そこを詰めるのが最大の改善です。",
+    "tight": "非常に安定したセッション — 各ラップが互いに±{{stdev}}秒以内。いまタイムはペースにあり、一貫性ではありません。"
+  },
+  "insight": {
+    "inconsistent_apex": "コーナー {{corner}}：約{{secs}}秒のロス — ここの最低速度が周回ごとに約{{swing}}（1シグマ）ばらついています。同じラインと速度を再現するほうが、さらにペースを求めるより効果的です。",
+    "scrubbing": "コーナー {{corner}}：約{{secs}}秒のロス — スローポイントで速度を削っています（横荷重で転がさず滑っている）。おそらく切りすぎ／アペックスが早すぎです。",
+    "unused_grip": "コーナー {{corner}}：約{{secs}}秒のロス — アペックスがグリップ限界より下に見えます（実証値の約{{util}}%）。もっと速度を持ち込む余地があります。",
+    "low_min_speed": "コーナー {{corner}}：約{{secs}}秒のロス — ベストより最低速度が約{{gap}}低いです。",
+    "low_min_speed_exit": "コーナー {{corner}}：約{{secs}}秒のロス — ストレートに向かうアペックスで約{{gap}}低く、続くストレートで差が広がります。",
+    "corner_execution": "コーナー {{corner}}：約{{secs}}秒のロス、アペックス速度はベストと同等 — ロスは進入／ライン／立ち上がりにあります（特定にはさらにチャンネルが必要）。",
+    "none": "コーナー {{corner}}：ベストペースです。"
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI 左フロント",
+      "psiFrontRight": "PSI 右フロント",
+      "psiRearLeft": "PSI 左リア",
+      "psiRearRight": "PSI 右リア",
+      "tireWidthFrontLeft": "タイヤ幅 左フロント",
+      "tireWidthFrontRight": "タイヤ幅 右フロント",
+      "tireWidthRearLeft": "タイヤ幅 左リア",
+      "tireWidthRearRight": "タイヤ幅 右リア",
+      "tireDiameterFrontLeft": "タイヤ径 左フロント",
+      "tireDiameterFrontRight": "タイヤ径 右フロント",
+      "tireDiameterRearLeft": "タイヤ径 左リア",
+      "tireDiameterRearRight": "タイヤ径 右リア",
+      "tireBrand": "タイヤブランド",
+      "unitSystem": "単位系",
+      "templateId": "セットアップテンプレート"
+    }
+  }
+}

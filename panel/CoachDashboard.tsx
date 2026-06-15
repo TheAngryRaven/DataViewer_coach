@@ -5,16 +5,37 @@ import type { VehicleSetup } from "@/plugins/setup";
 import { buildCoachingReport, type CoachingReport } from "../analysis/report";
 import type { CornerMethod } from "../analysis/corners";
 import type { CornerInsight, CornerRootCause } from "../analysis/coaching";
+import { cornerInsightMessage } from "../analysis/coaching";
 import type { BrakingPoint, SectorDelta, ThrottlePoint } from "../analysis/segments";
+import type { TakeawayMessage } from "../analysis/debrief";
 import { formatLapTimeMs, formatSpeed } from "../analysis/insights";
-import { describeCornerInsight } from "../analysis/coaching";
-import { describeSetupChange } from "../analysis/setupDiff";
+import { setupChangeMessage } from "../analysis/setupDiff";
+import { formatDecimal, formatInteger } from "@/lib/i18n/format";
 import { UplotChart, verticalMarkersPlugin, type ChartMarker } from "./UplotChart";
-import { RaceLineMap, CAUSE_COLOR, CAUSE_LABEL } from "./RaceLineMap";
+import { RaceLineMap, CAUSE_COLOR, CAUSE_KEYS } from "./RaceLineMap";
+import { useCoachT, useCoachLocale } from "./i18n";
 
-const CAUSE_LEGEND = (
-  ["low_min_speed", "scrubbing", "unused_grip", "inconsistent_apex", "corner_execution", "none"] as const
-).map((cause) => ({ cause, color: CAUSE_COLOR[cause], label: CAUSE_LABEL[cause] }));
+// Cause buckets in legend order; labels are resolved at render time via i18n.
+const CAUSE_LEGEND = CAUSE_KEYS.map((cause) => ({ cause, color: CAUSE_COLOR[cause] }));
+
+type CoachT = ReturnType<typeof useCoachT>;
+
+/** Phrase the structured session takeaway via i18n (analysis emits the descriptor). */
+function takeawayText(t: CoachT, locale: string, m: TakeawayMessage): string {
+  switch (m.key) {
+    case "noLaps":
+      return t("takeaway.noLaps");
+    case "oneLap":
+      return t("takeaway.oneLap", { best: formatLapTimeMs(m.bestMs, locale) });
+    case "inconsistent":
+      return t("takeaway.inconsistent", {
+        best: formatLapTimeMs(m.bestMs, locale),
+        gap: formatDecimal(m.gapMs / 1000, locale, 1),
+      });
+    case "tight":
+      return t("takeaway.tight", { stdev: formatDecimal(m.stdevMs / 1000, locale, 2) });
+  }
+}
 
 /** Non-corner map overlays the driver can independently show/hide. */
 interface MapLayers {
@@ -35,6 +56,8 @@ const REFERENCE_STROKE = "#22d3ee";
 const SUBJECT_STROKE = "#f59e0b";
 
 export default function CoachDashboard(props: PluginPanelProps) {
+  const t = useCoachT();
+  const locale = useCoachLocale();
   const { data, laps, course, useKph } = props;
   const [cornerMethod, setCornerMethod] = useState<CornerMethod>("speed");
   // Legend toggles: causes the driver has switched off are hidden on the map.
@@ -54,8 +77,8 @@ export default function CoachDashboard(props: PluginPanelProps) {
 
   const referenceLabel =
     report.referenceSource === "snapshot" && report.snapshotReference
-      ? `Snapshot (${formatLapTimeMs(report.snapshotReference.lapTimeMs)})`
-      : `Best (lap ${report.bestLapNumber ?? "?"})`;
+      ? t("summary.referenceSnapshot", { time: formatLapTimeMs(report.snapshotReference.lapTimeMs, locale) })
+      : t("summary.referenceBest", { lap: report.bestLapNumber ?? "?" });
 
   // Sector 2/3 boundary lines, shared across every distance-axis chart.
   const sectorMarkers = useMemo<ChartMarker[]>(
@@ -85,19 +108,19 @@ export default function CoachDashboard(props: PluginPanelProps) {
       report.subjectProfile !== report.referenceProfile
     ) {
       ys.push(report.subjectLatAccelMps2.map(toG));
-      series.push({ label: `Lap ${report.subjectProfile.lapNumber}`, stroke: SUBJECT_STROKE, width: 2 });
+      series.push({ label: t("chart.lap", { lap: report.subjectProfile.lapNumber }), stroke: SUBJECT_STROKE, width: 2 });
     }
     return {
       data: [report.grid, ...ys] as uPlot.AlignedData,
       options: {
         scales: { x: { time: false } },
-        axes: [{ label: "Distance (m)" }, { label: "Lateral g" }],
+        axes: [{ label: t("chart.distanceM") }, { label: t("chart.latG") }],
         series,
         legend: { show: true },
         plugins: markerPlugins,
       } satisfies Omit<uPlot.Options, "width" | "height">,
     };
-  }, [report, referenceLabel, markerPlugins]);
+  }, [report, referenceLabel, markerPlugins, t]);
 
   const speedChart = useMemo(() => {
     if (report.referenceProfile === null) return null;
@@ -110,32 +133,32 @@ export default function CoachDashboard(props: PluginPanelProps) {
     const ys: number[][] = [best];
     if (report.subjectProfile && report.subjectProfile !== report.referenceProfile) {
       ys.push(report.subjectProfile.speedMps.map(toSpeed));
-      series.push({ label: `Lap ${report.subjectProfile.lapNumber}`, stroke: SUBJECT_STROKE, width: 2 });
+      series.push({ label: t("chart.lap", { lap: report.subjectProfile.lapNumber }), stroke: SUBJECT_STROKE, width: 2 });
     }
     return {
       data: [xs, ...ys] as uPlot.AlignedData,
       options: {
         scales: { x: { time: false } },
-        axes: [{ label: "Distance (m)" }, { label: `Speed (${useKph ? "km/h" : "mph"})` }],
+        axes: [{ label: t("chart.distanceM") }, { label: t("chart.speedAxis", { unit: useKph ? "km/h" : "mph" }) }],
         series,
         legend: { show: true },
         plugins: markerPlugins,
       } satisfies Omit<uPlot.Options, "width" | "height">,
     };
-  }, [report, useKph, referenceLabel, markerPlugins]);
+  }, [report, useKph, referenceLabel, markerPlugins, t]);
 
   const deltaChart = useMemo(() => {
     if (report.deltaMs.length === 0) return null;
-    const versus = report.referenceSource === "snapshot" ? "snapshot" : "best";
+    const versus = report.referenceSource === "snapshot" ? t("chart.versusSnapshot") : t("chart.versusBest");
     return {
       data: [report.grid, report.deltaMs.map((ms) => ms / 1000)] as uPlot.AlignedData,
       options: {
         scales: { x: { time: false } },
-        axes: [{ label: "Distance (m)" }, { label: `Δ time vs ${versus} (s)` }],
+        axes: [{ label: t("chart.distanceM") }, { label: t("chart.deltaAxis", { versus }) }],
         series: [
           {},
           {
-            label: `Lap ${report.subjectLapNumber ?? "?"} vs ${versus}`,
+            label: t("chart.deltaSeries", { lap: report.subjectLapNumber ?? "?", versus }),
             stroke: SUBJECT_STROKE,
             fill: "rgba(245,158,11,0.15)",
             width: 2,
@@ -145,10 +168,10 @@ export default function CoachDashboard(props: PluginPanelProps) {
         plugins: markerPlugins,
       } satisfies Omit<uPlot.Options, "width" | "height">,
     };
-  }, [report, markerPlugins]);
+  }, [report, markerPlugins, t]);
 
-  if (data === null) return <Center>Load a session to start coaching.</Center>;
-  if (laps.length === 0) return <Center>No complete laps detected yet.</Center>;
+  if (data === null) return <Center>{t("states.loadSession")}</Center>;
+  if (laps.length === 0) return <Center>{t("states.noLaps")}</Center>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 16, height: "100%", overflowY: "auto" }}>
@@ -163,11 +186,19 @@ export default function CoachDashboard(props: PluginPanelProps) {
       </div>
 
       {report.setupChanges.length > 0 && (
-        <Section title="Setup changes since baseline">
+        <Section title={t("sections.setupChanges")}>
           <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
-            {report.setupChanges.map((change) => (
-              <li key={change.field}>{describeSetupChange(change)}</li>
-            ))}
+            {report.setupChanges.map((change) => {
+              const m = setupChangeMessage(change, locale);
+              const label = m.labelKey ? t(`setup.fields.${m.labelKey}`) : m.label;
+              return (
+                <li key={change.field}>
+                  {m.delta !== null
+                    ? t("setup.changeLineDelta", { label, before: m.before, after: m.after, delta: m.delta })
+                    : t("setup.changeLine", { label, before: m.before, after: m.after })}
+                </li>
+              );
+            })}
           </ul>
         </Section>
       )}
@@ -177,31 +208,31 @@ export default function CoachDashboard(props: PluginPanelProps) {
       )}
 
       {latGChart && (
-        <Section title="Lateral g (cornering load)">
+        <Section title={t("sections.latG")}>
           <UplotChart data={latGChart.data} options={latGChart.options} height={180} />
         </Section>
       )}
 
       {speedChart && (
-        <Section title="Speed trace">
+        <Section title={t("sections.speedTrace")}>
           <UplotChart data={speedChart.data} options={speedChart.options} height={220} />
         </Section>
       )}
 
       {deltaChart && (
-        <Section title="Where the time goes (delta to best)">
+        <Section title={t("sections.delta")}>
           <UplotChart data={deltaChart.data} options={deltaChart.options} height={180} />
         </Section>
       )}
 
       {report.insights.length > 0 && (
-        <Section title="Where you're losing time (by sector)">
+        <Section title={t("sections.sectorBreakdown")}>
           <CornerBreakdown report={report} useKph={useKph} />
         </Section>
       )}
 
       {report.apex.some((a) => a.confident) && (
-        <Section title="Apex line (V-Min vs geometric apex)">
+        <Section title={t("sections.apexLine")}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
             {report.apex
               .filter((a) => a.confident)
@@ -211,12 +242,16 @@ export default function CoachDashboard(props: PluginPanelProps) {
                   style={{ display: "flex", flexDirection: "column", padding: "4px 10px", borderRadius: 6, background: "rgba(127,127,127,0.12)" }}
                 >
                   <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-                    Corner {a.cornerIndex + 1}
+                    {t("apex.corner", { corner: a.cornerIndex + 1 })}
                   </span>
                   <span style={{ fontVariantNumeric: "tabular-nums", color: a.kind === "on" ? REFERENCE_STROKE : SUBJECT_STROKE }}>
                     {a.kind === "on"
-                      ? "on the apex"
-                      : `${a.kind} apex ${a.offsetM > 0 ? "+" : "-"}${Math.abs(Math.round(a.offsetM))} m`}
+                      ? t("apex.onApex")
+                      : t("apex.offset", {
+                          kind: a.kind === "early" ? t("apex.kindEarly") : t("apex.kindLate"),
+                          sign: a.offsetM > 0 ? "+" : "-",
+                          meters: formatInteger(Math.abs(Math.round(a.offsetM)), locale),
+                        })}
                   </span>
                 </div>
               ))}
@@ -225,13 +260,9 @@ export default function CoachDashboard(props: PluginPanelProps) {
       )}
 
       {data !== null && bestLap !== null && (
-        <Section title={`Track map — corners & apex (best lap ${bestLap.lapNumber})`}>
+        <Section title={t("sections.trackMap", { lap: bestLap.lapNumber })}>
           <p className="text-muted-foreground" style={{ fontSize: 12, margin: 0 }}>
-            Corners are coloured by attributed cause (dashed = low-confidence /
-            advisory). Cyan ring = geometric apex · dashed purple = apex offset ·
-            green dot = exit onto a straight (grey = none). Tap a cause or overlay
-            below to show/hide it; click any marker; toggle a satellite background
-            top-right.
+            {t("map.legend")}
           </p>
           <CauseLegend hidden={hiddenCauses} onToggle={setHiddenCauses} />
           <LayerToggles layers={layers} onChange={setLayers} />
@@ -259,26 +290,28 @@ export default function CoachDashboard(props: PluginPanelProps) {
 }
 
 function Summary({ report, useKph }: { report: CoachingReport; useKph: boolean }) {
+  const t = useCoachT();
+  const locale = useCoachLocale();
   const { debrief, baselineDeltaMs } = report;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        <Chip label="Laps" value={debrief.validLaps < debrief.lapsAnalysed ? `${debrief.validLaps}/${debrief.lapsAnalysed}` : `${debrief.lapsAnalysed}`} />
-        {debrief.best && <Chip label="Best" value={`${formatLapTimeMs(debrief.best.lapTimeMs)} (L${debrief.best.lapNumber})`} />}
+        <Chip label={t("summary.laps")} value={debrief.validLaps < debrief.lapsAnalysed ? `${debrief.validLaps}/${debrief.lapsAnalysed}` : `${debrief.lapsAnalysed}`} />
+        {debrief.best && <Chip label={t("summary.best")} value={t("summary.bestValue", { time: formatLapTimeMs(debrief.best.lapTimeMs, locale), lap: debrief.best.lapNumber })} />}
         {baselineDeltaMs !== null && (
           <Chip
-            label="vs baseline"
-            value={`${baselineDeltaMs >= 0 ? "+" : "-"}${Math.abs(baselineDeltaMs / 1000).toFixed(2)}s`}
+            label={t("summary.vsBaseline")}
+            value={`${baselineDeltaMs >= 0 ? "+" : "-"}${formatDecimal(Math.abs(baselineDeltaMs / 1000), locale, 2)}s`}
             valueColor={baselineDeltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE}
           />
         )}
-        {debrief.consistency && <Chip label="Consistency" value={`±${(debrief.consistency.stdevMs / 1000).toFixed(2)}s`} />}
-        {debrief.theoreticalBestMs !== null && <Chip label="Theoretical" value={formatLapTimeMs(debrief.theoreticalBestMs)} />}
+        {debrief.consistency && <Chip label={t("summary.consistency")} value={`±${formatDecimal(debrief.consistency.stdevMs / 1000, locale, 2)}s`} />}
+        {debrief.theoreticalBestMs !== null && <Chip label={t("summary.theoretical")} value={formatLapTimeMs(debrief.theoreticalBestMs, locale)} />}
         {debrief.topSpeedMph !== null && debrief.topSpeedKph !== null && (
-          <Chip label="Top speed" value={formatSpeed(debrief.topSpeedMph, debrief.topSpeedKph, useKph)} />
+          <Chip label={t("summary.topSpeed")} value={formatSpeed(debrief.topSpeedMph, debrief.topSpeedKph, useKph, locale)} />
         )}
       </div>
-      <p style={{ margin: 0 }}>{debrief.takeaway}</p>
+      <p style={{ margin: 0 }}>{takeawayText(t, locale, debrief.takeaway)}</p>
     </div>
   );
 }
@@ -288,6 +321,8 @@ function SnapshotBadge({
 }: {
   reference: NonNullable<CoachingReport["snapshotReference"]>;
 }) {
+  const t = useCoachT();
+  const locale = useCoachLocale();
   return (
     <div
       style={{
@@ -302,32 +337,38 @@ function SnapshotBadge({
         alignItems: "baseline",
       }}
     >
-      <span style={{ color: REFERENCE_STROKE, fontWeight: 600 }}>Compared against:</span>
+      <span style={{ color: REFERENCE_STROKE, fontWeight: 600 }}>{t("badges.comparedAgainst")}</span>
       <span style={{ fontVariantNumeric: "tabular-nums" }}>
-        {reference.engine} · {formatLapTimeMs(reference.lapTimeMs)} · {reference.trackName} — {reference.courseName}
+        {t("badges.comparedDetail", {
+          engine: reference.engine,
+          time: formatLapTimeMs(reference.lapTimeMs, locale),
+          track: reference.trackName,
+          course: reference.courseName,
+        })}
       </span>
     </div>
   );
 }
 
 function BaselineSetupNote({ setup }: { setup: VehicleSetup }) {
+  const t = useCoachT();
   const psi = [setup.psiFrontLeft, setup.psiFrontRight, setup.psiRearLeft, setup.psiRearRight];
   const knownPsi = psi.filter((v): v is number => typeof v === "number");
   const psiText =
     knownPsi.length === 4
-      ? `PSI ${psi.join(" / ")} (FL / FR / RL / RR)`
+      ? t("baselineSetup.psiAll", { values: psi.join(" / ") })
       : knownPsi.length > 0
-      ? `PSI ${knownPsi.join(" / ")}`
+      ? t("baselineSetup.psiSome", { values: knownPsi.join(" / ") })
       : null;
   const parts = [
-    setup.tireBrand ? `tires: ${setup.tireBrand}` : null,
+    setup.tireBrand ? t("baselineSetup.tires", { brand: setup.tireBrand }) : null,
     psiText,
   ].filter((p): p is string => p !== null);
   if (parts.length === 0) return null;
   return (
-    <Section title="Baseline setup">
+    <Section title={t("sections.baselineSetup")}>
       <p className="text-muted-foreground" style={{ margin: 0, fontSize: 13 }}>
-        Frozen from the baseline lap — no live setup is assigned, so no diff is shown.
+        {t("baselineSetup.note")}
       </p>
       <p style={{ margin: 0, fontSize: 13 }}>{parts.join(" · ")}</p>
     </Section>
@@ -335,26 +376,23 @@ function BaselineSetupNote({ setup }: { setup: VehicleSetup }) {
 }
 
 function DataQuality({ report }: { report: CoachingReport }) {
+  const t = useCoachT();
+  const locale = useCoachLocale();
   const { capabilities, quality } = report;
   const parts = [
-    quality.sampleRateHz > 0 ? `${Math.round(quality.sampleRateHz)} Hz` : "rate n/a",
-    `GPS ${quality.level}`,
-    quality.hdop !== null ? `HDOP ${quality.hdop.toFixed(1)}` : null,
-    quality.satellites !== null ? `${Math.round(quality.satellites)} sats` : null,
-    capabilities.measuredG ? "measured g" : "GPS-derived g",
-    capabilities.throttle ? "throttle" : null,
-    capabilities.brake ? "brake" : null,
-    capabilities.rpm ? "rpm" : null,
+    quality.sampleRateHz > 0 ? t("quality.rateHz", { hz: formatInteger(Math.round(quality.sampleRateHz), locale) }) : t("quality.rateNa"),
+    t("quality.gps", { level: quality.level }),
+    quality.hdop !== null ? t("quality.hdop", { value: formatDecimal(quality.hdop, locale, 1) }) : null,
+    quality.satellites !== null ? t("quality.sats", { count: formatInteger(Math.round(quality.satellites), locale) }) : null,
+    capabilities.measuredG ? t("quality.measuredG") : t("quality.derivedG"),
+    capabilities.throttle ? t("quality.throttle") : null,
+    capabilities.brake ? t("quality.brake") : null,
+    capabilities.rpm ? t("quality.rpm") : null,
   ].filter((x): x is string => x !== null);
   return (
     <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: "auto", paddingTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
       <span>{parts.join(" · ")}</span>
-      <span>
-        Scrubbing / unused-grip reads are GPS-derived (lateral g ≈ v²·κ) and
-        advisory; confidence is capped by GPS quality. A chassis-mounted
-        accelerometer would sharpen them — many kart loggers mount the sensor on
-        the steering, which isn't ideal for this.
-      </span>
+      <span>{t("quality.note")}</span>
     </div>
   );
 }
@@ -368,9 +406,10 @@ function MethodToggle({
   onChange: (method: CornerMethod) => void;
   cornerCount: number;
 }) {
+  const t = useCoachT();
   const options: { value: CornerMethod; label: string }[] = [
-    { value: "speed", label: "Speed (V-Min)" },
-    { value: "curvature", label: "Curvature" },
+    { value: "speed", label: t("method.speed") },
+    { value: "curvature", label: t("method.curvature") },
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
@@ -399,13 +438,16 @@ function MethodToggle({
         })}
       </div>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-        {cornerCount} corner{cornerCount === 1 ? "" : "s"} detected
+        {cornerCount === 1
+          ? t("method.cornerDetected", { count: cornerCount })
+          : t("method.cornersDetected", { count: cornerCount })}
       </span>
     </div>
   );
 }
 
 function BetaBadge() {
+  const t = useCoachT();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span
@@ -419,10 +461,10 @@ function BetaBadge() {
           border: "1px solid rgba(234,179,8,0.4)",
         }}
       >
-        Experimental analysis · beta
+        {t("badges.experimental")}
       </span>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-        deterministic, on-device — figures may shift as the analysis is tuned
+        {t("badges.experimentalCaption")}
       </span>
     </div>
   );
@@ -432,6 +474,7 @@ function BetaBadge() {
 // GPS-derived advisory that used to be tagged onto every scrubbing / unused-grip
 // line, hoisted to a single warning at the top.
 function AdvisoryNote() {
+  const t = useCoachT();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <span
@@ -445,27 +488,20 @@ function AdvisoryNote() {
           border: "1px solid rgba(249,115,22,0.4)",
         }}
       >
-        GPS-derived · advisory
+        {t("badges.advisory")}
       </span>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-        scrubbing &amp; unused-grip reads come from a GPS-derived friction circle
-        (lateral g ≈ v²·κ) — directional, not absolute; a chassis accelerometer
-        would sharpen them
+        {t("badges.advisoryCaption")}
       </span>
     </div>
   );
 }
 
-const SECTOR_LABELS: Record<SectorDelta["sector"], string> = {
-  s1: "Sector 1",
-  s2: "Sector 2",
-  s3: "Sector 3",
-};
-
 // Corner notes grouped under their sector. When the course defines sector
 // boundaries we place each corner by its apex distance and show the sector split
 // (time : delta) as a header; otherwise we fall back to a flat, ranked list.
 function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: boolean }) {
+  const t = useCoachT();
   const brakingByCorner = new Map(report.braking.map((b) => [b.cornerIndex, b]));
   const throttleByCorner = new Map(report.throttle.map((t) => [t.cornerIndex, t]));
   const rowFor = (insight: CornerInsight) => (
@@ -500,7 +536,7 @@ function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: b
         const insights = report.insights.filter((i) => sectorOf(i.apexDist) === key);
         return (
           <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <SectorHeader label={SECTOR_LABELS[key]} delta={deltaByKey.get(key) ?? null} />
+            <SectorHeader label={t(`sectors.${key}`)} delta={deltaByKey.get(key) ?? null} />
             <div
               style={{
                 display: "flex",
@@ -514,7 +550,7 @@ function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: b
                 insights.map(rowFor)
               ) : (
                 <span className="text-muted-foreground" style={{ fontSize: 13 }}>
-                  On your best pace through here.
+                  {t("breakdown.onBestPace")}
                 </span>
               )}
             </div>
@@ -526,16 +562,17 @@ function CornerBreakdown({ report, useKph }: { report: CoachingReport; useKph: b
 }
 
 function SectorHeader({ label, delta }: { label: string; delta: SectorDelta | null }) {
+  const locale = useCoachLocale();
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
       <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
       {delta && (
         <span className="text-muted-foreground" style={{ fontVariantNumeric: "tabular-nums", fontSize: 13 }}>
-          {formatLapTimeMs(delta.subjectMs)}
+          {formatLapTimeMs(delta.subjectMs, locale)}
           {" : "}
           <span style={{ color: delta.deltaMs > 0 ? SUBJECT_STROKE : REFERENCE_STROKE }}>
             {delta.deltaMs >= 0 ? "+" : "-"}
-            {Math.abs(delta.deltaMs / 1000).toFixed(2)}s
+            {formatDecimal(Math.abs(delta.deltaMs / 1000), locale, 2)}s
           </span>
         </span>
       )}
@@ -554,13 +591,16 @@ function InsightRow({
   braking: BrakingPoint | undefined;
   throttle: ThrottlePoint | undefined;
 }) {
+  const t = useCoachT();
+  const locale = useCoachLocale();
+  const message = cornerInsightMessage(insight, useKph, locale);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <span>{describeCornerInsight(insight, useKph)}</span>
+      <span>{t(`insight.${message.key}`, message.params)}</span>
       <span className="text-muted-foreground" style={{ fontSize: 12 }}>
-        confidence: {insight.confidence}
-        {braking?.brakingDistanceM != null ? ` · braking ${Math.round(braking.brakingDistanceM)} m out` : ""}
-        {throttle?.throttleDist != null ? ` · back to throttle @ ${Math.round(throttle.throttleDist)} m` : ""}
+        {t("breakdown.confidence", { level: insight.confidence })}
+        {braking?.brakingDistanceM != null ? t("breakdown.braking", { meters: formatInteger(Math.round(braking.brakingDistanceM), locale) }) : ""}
+        {throttle?.throttleDist != null ? t("breakdown.throttle", { meters: formatInteger(Math.round(throttle.throttleDist), locale) }) : ""}
       </span>
     </div>
   );
@@ -573,6 +613,7 @@ function CauseLegend({
   hidden: ReadonlySet<CornerRootCause>;
   onToggle: (next: ReadonlySet<CornerRootCause>) => void;
 }) {
+  const t = useCoachT();
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {CAUSE_LEGEND.map((entry) => {
@@ -603,7 +644,7 @@ function CauseLegend({
             }}
           >
             <span style={{ width: 14, height: 6, borderRadius: 2, background: entry.color }} />
-            <span>{entry.label}</span>
+            <span>{t(`causes.${entry.cause}`)}</span>
           </button>
         );
       })}
@@ -614,10 +655,11 @@ function CauseLegend({
 // Show/hide the non-corner map overlays. Same button shape as the cause legend,
 // with a swatch echoing how each overlay is drawn on the map.
 function LayerToggles({ layers, onChange }: { layers: MapLayers; onChange: (next: MapLayers) => void }) {
+  const t = useCoachT();
   const items: { key: keyof MapLayers; label: string; color: string }[] = [
-    { key: "apex", label: "Geometric apex", color: "#22d3ee" },
-    { key: "exits", label: "Exit points", color: "#22c55e" },
-    { key: "sectors", label: "Sector lines", color: "#e2e8f0" },
+    { key: "apex", label: t("layers.apex"), color: "#22d3ee" },
+    { key: "exits", label: t("layers.exits"), color: "#22c55e" },
+    { key: "sectors", label: t("layers.sectors"), color: "#e2e8f0" },
   ];
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

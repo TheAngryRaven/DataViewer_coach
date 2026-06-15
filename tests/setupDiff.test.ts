@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { VehicleSetup } from "@/plugins/setup";
-import { describeSetupChange, diffSetups } from "../analysis/setupDiff";
+import { setupChangeMessage, diffSetups } from "../analysis/setupDiff";
 
 function setup(overrides: Partial<VehicleSetup> = {}): VehicleSetup {
   return {
@@ -78,30 +78,46 @@ describe("diffSetups", () => {
   });
 });
 
-describe("describeSetupChange", () => {
-  it("formats a numeric PSI bump with a signed delta and the unit", () => {
+describe("setupChangeMessage", () => {
+  it("formats a numeric PSI bump into value+unit pieces with a signed delta", () => {
     expect(
-      describeSetupChange({
+      setupChangeMessage({
         field: "psiFrontLeft",
+        labelKey: "psiFrontLeft",
         label: "Front-left PSI",
         baseline: 12,
         current: 13,
         delta: 1,
         unit: "psi",
       }),
-    ).toBe("Front-left PSI: 12 psi → 13 psi (+1)");
+    ).toEqual({ labelKey: "psiFrontLeft", label: "Front-left PSI", before: "12 psi", after: "13 psi", delta: "+1" });
   });
 
-  it("formats a string-valued change without a delta", () => {
+  it("formats a string-valued change with no delta", () => {
     expect(
-      describeSetupChange({
+      setupChangeMessage({
         field: "tireBrand",
+        labelKey: "tireBrand",
         label: "Tire brand",
         baseline: "MG Red",
         current: "Vega White",
         delta: null,
         unit: null,
       }),
-    ).toBe("Tire brand: MG Red → Vega White");
+    ).toEqual({ labelKey: "tireBrand", label: "Tire brand", before: "MG Red", after: "Vega White", delta: null });
+  });
+
+  it("carries a null labelKey through for custom fields", () => {
+    expect(
+      setupChangeMessage({
+        field: "customFields.frontCamber",
+        labelKey: null,
+        label: "frontCamber",
+        baseline: null,
+        current: 2.5,
+        delta: null,
+        unit: null,
+      }),
+    ).toEqual({ labelKey: null, label: "frontCamber", before: "—", after: "2.5", delta: null });
   });
 });

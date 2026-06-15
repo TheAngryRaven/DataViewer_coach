@@ -15,7 +15,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "json-summary", "lcov"],
-      include: ["index.ts", "plugins/**/*.ts", "analysis/**/*.ts"],
+      include: ["index.ts", "plugins/**/*.ts", "analysis/**/*.ts", "lib/i18n/**/*.ts", "panel/i18n.ts"],
       exclude: ["plugins/types.ts"],
       // Gate intentionally low so it can be ratcheted up later as coverage grows.
       thresholds: {

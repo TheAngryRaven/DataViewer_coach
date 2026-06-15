@@ -1,0 +1,150 @@
+{
+  "states": {
+    "loadSession": "Carica una sessione per iniziare il coaching.",
+    "noLaps": "Nessun giro completo rilevato ancora."
+  },
+  "badges": {
+    "experimental": "Analisi sperimentale · beta",
+    "experimentalCaption": "deterministica, sul dispositivo — i valori possono cambiare man mano che l'analisi viene messa a punto",
+    "advisory": "Derivato dal GPS · indicativo",
+    "advisoryCaption": "le letture di scrubbing e grip inutilizzato provengono da un cerchio di aderenza derivato dal GPS (g laterale ≈ v²·κ) — direzionali, non assolute; un accelerometro sul telaio le affinerebbe",
+    "comparedAgainst": "Confrontato con:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Giri",
+    "best": "Migliore",
+    "bestValue": "{{time}} (G{{lap}})",
+    "vsBaseline": "vs base",
+    "consistency": "Costanza",
+    "theoretical": "Teorico",
+    "topSpeed": "Vel. max",
+    "referenceSnapshot": "Snapshot ({{time}})",
+    "referenceBest": "Migliore (giro {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Modifiche di assetto dalla base",
+    "latG": "G laterale (carico in curva)",
+    "speedTrace": "Tracciato della velocità",
+    "delta": "Dove si perde tempo (delta sul migliore)",
+    "sectorBreakdown": "Dove perdi tempo (per settore)",
+    "apexLine": "Linea di corda (V-Min vs corda geometrica)",
+    "trackMap": "Mappa del circuito — curve e corda (giro migliore {{lap}})",
+    "baselineSetup": "Assetto base"
+  },
+  "baselineSetup": {
+    "note": "Congelato dal giro base — nessun assetto live assegnato, quindi non viene mostrata alcuna differenza.",
+    "tires": "gomme: {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Velocità (V-Min)",
+    "curvature": "Curvatura",
+    "cornerDetected": "{{count}} curva rilevata",
+    "cornersDetected": "{{count}} curve rilevate"
+  },
+  "chart": {
+    "distanceM": "Distanza (m)",
+    "latG": "G laterale",
+    "speedAxis": "Velocità ({{unit}})",
+    "lap": "Giro {{lap}}",
+    "deltaAxis": "Δ tempo vs {{versus}} (s)",
+    "deltaSeries": "Giro {{lap}} vs {{versus}}",
+    "versusSnapshot": "snapshot",
+    "versusBest": "migliore"
+  },
+  "apex": {
+    "corner": "Curva {{corner}}",
+    "onApex": "sulla corda",
+    "offset": "corda {{kind}} {{sign}}{{meters}} m",
+    "kindEarly": "anticipata",
+    "kindLate": "ritardata"
+  },
+  "map": {
+    "legend": "Le curve sono colorate in base alla causa attribuita (tratteggiata = bassa confidenza / indicativo). Anello ciano = corda geometrica · viola tratteggiato = scostamento della corda · punto verde = uscita su un rettilineo (grigio = nessuna). Tocca una causa o un livello qui sotto per mostrare/nascondere; clicca su un marcatore; attiva uno sfondo satellitare in alto a destra.",
+    "tileOff": "Off",
+    "tileMap": "Mappa",
+    "tileSatellite": "Satellite",
+    "startFinish": "Partenza / arrivo",
+    "sectorBoundary": "Confine di settore {{label}}",
+    "geoApex": "Curva {{corner}} · corda geometrica (picco di curvatura)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Uscita {{speed}}",
+    "exitStraight": "rettilineo {{meters}} m",
+    "causeMeta": "(confidenza {{confidence}}, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Corda geometrica",
+    "exits": "Punti di uscita",
+    "sectors": "Linee di settore"
+  },
+  "causes": {
+    "low_min_speed": "velocità minima bassa",
+    "scrubbing": "scrubbing",
+    "unused_grip": "grip inutilizzato",
+    "inconsistent_apex": "corda incostante",
+    "corner_execution": "esecuzione (traiettoria/frenata)",
+    "none": "in ritmo"
+  },
+  "sectors": {
+    "s1": "Settore 1",
+    "s2": "Settore 2",
+    "s3": "Settore 3"
+  },
+  "breakdown": {
+    "onBestPace": "Al tuo passo migliore qui.",
+    "confidence": "confidenza: {{level}}",
+    "braking": " · frenata a {{meters}} m",
+    "throttle": " · di nuovo gas a {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "freq. n/d",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} sat.",
+    "measuredG": "g misurata",
+    "derivedG": "g derivata dal GPS",
+    "throttle": "gas",
+    "brake": "freno",
+    "rpm": "giri/min",
+    "note": "Le letture di scrubbing / grip inutilizzato sono derivate dal GPS (g laterale ≈ v²·κ) e indicative; la confidenza è limitata dalla qualità del GPS. Un accelerometro montato sul telaio le affinerebbe — molti datalogger per kart montano il sensore sullo sterzo, il che non è ideale per questo."
+  },
+  "takeaway": {
+    "noLaps": "Ancora nessun giro completo da analizzare.",
+    "oneLap": "Per ora un solo giro pulito (migliore {{best}}) — falne qualcuno in più per leggere la costanza.",
+    "inconsistent": "Il passo c'è — giro migliore {{best}} — ma perdi ~{{gap}}s al giro per incostanza; sistemarla è il guadagno maggiore.",
+    "tight": "Sessione molto costante — giri entro ±{{stdev}}s l'uno dall'altro. Ora il tempo è nel passo, non nella costanza."
+  },
+  "insight": {
+    "inconsistent_apex": "Curva {{corner}}: perdi ~{{secs}}s — la tua velocità minima qui varia di circa {{swing}} (1 sigma) giro dopo giro. Ripetere la stessa traiettoria e velocità rende più che cercare altro passo.",
+    "scrubbing": "Curva {{corner}}: perdi ~{{secs}}s — stai grattando velocità nel punto lento (scivolando sotto carico laterale invece di scorrere). Probabilmente troppo sterzo / corda anticipata.",
+    "unused_grip": "Curva {{corner}}: perdi ~{{secs}}s — la corda sembra sotto il limite di aderenza (~{{util}}% del dimostrato), quindi c'è margine per portare più velocità.",
+    "low_min_speed": "Curva {{corner}}: perdi ~{{secs}}s — circa {{gap}} di velocità minima in meno rispetto al tuo migliore.",
+    "low_min_speed_exit": "Curva {{corner}}: perdi ~{{secs}}s — circa {{gap}} in meno alla corda verso un rettilineo, quindi si accumula lungo il rettilineo successivo.",
+    "corner_execution": "Curva {{corner}}: perdi ~{{secs}}s con la velocità di corda pari al tuo migliore — la perdita è in ingresso/traiettoria/uscita (servono più canali per individuarla).",
+    "none": "Curva {{corner}}: al tuo passo migliore."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "PSI anteriore sinistro",
+      "psiFrontRight": "PSI anteriore destro",
+      "psiRearLeft": "PSI posteriore sinistro",
+      "psiRearRight": "PSI posteriore destro",
+      "tireWidthFrontLeft": "Larghezza gomma anteriore sinistra",
+      "tireWidthFrontRight": "Larghezza gomma anteriore destra",
+      "tireWidthRearLeft": "Larghezza gomma posteriore sinistra",
+      "tireWidthRearRight": "Larghezza gomma posteriore destra",
+      "tireDiameterFrontLeft": "Diametro gomma anteriore sinistra",
+      "tireDiameterFrontRight": "Diametro gomma anteriore destra",
+      "tireDiameterRearLeft": "Diametro gomma posteriore sinistra",
+      "tireDiameterRearRight": "Diametro gomma posteriore destra",
+      "tireBrand": "Marca gomme",
+      "unitSystem": "Sistema di unità",
+      "templateId": "Modello di assetto"
+    }
+  }
+}

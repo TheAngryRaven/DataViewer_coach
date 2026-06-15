@@ -1,0 +1,150 @@
+{
+  "states": {
+    "loadSession": "Load a session to start coaching.",
+    "noLaps": "No complete laps detected yet."
+  },
+  "badges": {
+    "experimental": "Experimental analysis · beta",
+    "experimentalCaption": "deterministic, on-device — figures may shift as the analysis is tuned",
+    "advisory": "GPS-derived · advisory",
+    "advisoryCaption": "scrubbing & unused-grip reads come from a GPS-derived friction circle (lateral g ≈ v²·κ) — directional, not absolute; a chassis accelerometer would sharpen them",
+    "comparedAgainst": "Compared against:",
+    "comparedDetail": "{{engine}} · {{time}} · {{track}} — {{course}}"
+  },
+  "summary": {
+    "laps": "Laps",
+    "best": "Best",
+    "bestValue": "{{time}} (L{{lap}})",
+    "vsBaseline": "vs baseline",
+    "consistency": "Consistency",
+    "theoretical": "Theoretical",
+    "topSpeed": "Top speed",
+    "referenceSnapshot": "Snapshot ({{time}})",
+    "referenceBest": "Best (lap {{lap}})"
+  },
+  "sections": {
+    "setupChanges": "Setup changes since baseline",
+    "latG": "Lateral g (cornering load)",
+    "speedTrace": "Speed trace",
+    "delta": "Where the time goes (delta to best)",
+    "sectorBreakdown": "Where you're losing time (by sector)",
+    "apexLine": "Apex line (V-Min vs geometric apex)",
+    "trackMap": "Track map — corners & apex (best lap {{lap}})",
+    "baselineSetup": "Baseline setup"
+  },
+  "baselineSetup": {
+    "note": "Frozen from the baseline lap — no live setup is assigned, so no diff is shown.",
+    "tires": "tires: {{brand}}",
+    "psiAll": "PSI {{values}} (FL / FR / RL / RR)",
+    "psiSome": "PSI {{values}}"
+  },
+  "method": {
+    "speed": "Speed (V-Min)",
+    "curvature": "Curvature",
+    "cornerDetected": "{{count}} corner detected",
+    "cornersDetected": "{{count}} corners detected"
+  },
+  "chart": {
+    "distanceM": "Distance (m)",
+    "latG": "Lateral g",
+    "speedAxis": "Speed ({{unit}})",
+    "lap": "Lap {{lap}}",
+    "deltaAxis": "Δ time vs {{versus}} (s)",
+    "deltaSeries": "Lap {{lap}} vs {{versus}}",
+    "versusSnapshot": "snapshot",
+    "versusBest": "best"
+  },
+  "apex": {
+    "corner": "Corner {{corner}}",
+    "onApex": "on the apex",
+    "offset": "{{kind}} apex {{sign}}{{meters}} m",
+    "kindEarly": "early",
+    "kindLate": "late"
+  },
+  "map": {
+    "legend": "Corners are coloured by attributed cause (dashed = low-confidence / advisory). Cyan ring = geometric apex · dashed purple = apex offset · green dot = exit onto a straight (grey = none). Tap a cause or overlay below to show/hide it; click any marker; toggle a satellite background top-right.",
+    "tileOff": "Off",
+    "tileMap": "Map",
+    "tileSatellite": "Satellite",
+    "startFinish": "Start / finish",
+    "sectorBoundary": "Sector boundary {{label}}",
+    "geoApex": "Corner {{corner}} · geometric apex (curvature peak)",
+    "vMin": "V-Min {{speed}}",
+    "exit": "Exit {{speed}}",
+    "exitStraight": "straight {{meters}} m",
+    "causeMeta": "({{confidence}} confidence, +{{seconds}}s)"
+  },
+  "layers": {
+    "apex": "Geometric apex",
+    "exits": "Exit points",
+    "sectors": "Sector lines"
+  },
+  "causes": {
+    "low_min_speed": "low minimum speed",
+    "scrubbing": "scrubbing",
+    "unused_grip": "unused grip",
+    "inconsistent_apex": "inconsistent apex",
+    "corner_execution": "execution (line/braking)",
+    "none": "on pace"
+  },
+  "sectors": {
+    "s1": "Sector 1",
+    "s2": "Sector 2",
+    "s3": "Sector 3"
+  },
+  "breakdown": {
+    "onBestPace": "On your best pace through here.",
+    "confidence": "confidence: {{level}}",
+    "braking": " · braking {{meters}} m out",
+    "throttle": " · back to throttle @ {{meters}} m"
+  },
+  "quality": {
+    "rateNa": "rate n/a",
+    "rateHz": "{{hz}} Hz",
+    "gps": "GPS {{level}}",
+    "hdop": "HDOP {{value}}",
+    "sats": "{{count}} sats",
+    "measuredG": "measured g",
+    "derivedG": "GPS-derived g",
+    "throttle": "throttle",
+    "brake": "brake",
+    "rpm": "rpm",
+    "note": "Scrubbing / unused-grip reads are GPS-derived (lateral g ≈ v²·κ) and advisory; confidence is capped by GPS quality. A chassis-mounted accelerometer would sharpen them — many kart loggers mount the sensor on the steering, which isn't ideal for this."
+  },
+  "takeaway": {
+    "noLaps": "No complete laps to analyse yet.",
+    "oneLap": "One clean lap so far (best {{best}}) — bank a few more to read your consistency.",
+    "inconsistent": "Your pace is there — best lap {{best}} — but you're losing ~{{gap}}s per lap to inconsistency; tightening that up is your biggest gain.",
+    "tight": "Tight session — laps within ±{{stdev}}s of each other. Pace, not consistency, is where the time is now."
+  },
+  "insight": {
+    "inconsistent_apex": "Corner {{corner}}: losing ~{{secs}}s — your minimum speed here swings about {{swing}} (1 sigma) lap to lap. Repeating the same line and speed is the bigger gain than chasing more pace.",
+    "scrubbing": "Corner {{corner}}: losing ~{{secs}}s — scrubbing speed through the slow point (sliding under lateral load rather than rolling through). Likely too much steering/early apex.",
+    "unused_grip": "Corner {{corner}}: losing ~{{secs}}s — apex looks under the grip limit (~{{util}}% of demonstrated), so there's room to carry more speed.",
+    "low_min_speed": "Corner {{corner}}: losing ~{{secs}}s — about {{gap}} less minimum speed than your best.",
+    "low_min_speed_exit": "Corner {{corner}}: losing ~{{secs}}s — about {{gap}} less at the apex onto a straight, so it compounds down the following straight.",
+    "corner_execution": "Corner {{corner}}: losing ~{{secs}}s with apex speed matching your best — the loss is in entry/line/exit (needs more channels to pin down).",
+    "none": "Corner {{corner}}: on your best pace."
+  },
+  "setup": {
+    "changeLine": "{{label}}: {{before}} → {{after}}",
+    "changeLineDelta": "{{label}}: {{before}} → {{after}} ({{delta}})",
+    "fields": {
+      "psiFrontLeft": "Front-left PSI",
+      "psiFrontRight": "Front-right PSI",
+      "psiRearLeft": "Rear-left PSI",
+      "psiRearRight": "Rear-right PSI",
+      "tireWidthFrontLeft": "Front-left tire width",
+      "tireWidthFrontRight": "Front-right tire width",
+      "tireWidthRearLeft": "Rear-left tire width",
+      "tireWidthRearRight": "Rear-right tire width",
+      "tireDiameterFrontLeft": "Front-left tire diameter",
+      "tireDiameterFrontRight": "Front-right tire diameter",
+      "tireDiameterRearLeft": "Rear-left tire diameter",
+      "tireDiameterRearRight": "Rear-right tire diameter",
+      "tireBrand": "Tire brand",
+      "unitSystem": "Unit system",
+      "templateId": "Setup template"
+    }
+  }
+}
